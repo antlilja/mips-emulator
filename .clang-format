@@ -1,5 +1,3 @@
-# .clang-format file for simple_math project
-
 Language: Cpp
 BasedOnStyle: LLVM
 IndentWidth: 4

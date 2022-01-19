@@ -4,7 +4,7 @@
 
 namespace mips_emulator {
     template <typename TUnsigned, typename TSigned>
-    class RegisterState {
+    class RegisterFile {
     public:
         using Unsigned = TUnsigned;
         using Signed = TSigned;
@@ -58,6 +58,6 @@ namespace mips_emulator {
         Register regs[REGISTER_COUNT] = {};
     };
 
-    using RegisterState32 = RegisterState<uint32_t, int32_t>;
-    using RegisterState64 = RegisterState<uint64_t, int64_t>;
+    using RegisterFile32 = RegisterFile<uint32_t, int32_t>;
+    using RegisterFile64 = RegisterFile<uint64_t, int64_t>;
 } // namespace mips_emulator

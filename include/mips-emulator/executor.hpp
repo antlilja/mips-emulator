@@ -4,15 +4,15 @@
 #include <cassert>
 
 namespace mips_emulator {
-    template <typename RegisterState>
+    template <typename RegisterFile>
     struct Executor {
-        using Register = typename RegisterState::Register;
-        using Address = typename RegisterState::Unsigned;
+        using Register = typename RegisterFile::Register;
+        using Address = typename RegisterFile::Unsigned;
 
         static void handle_rtype_instr(const Instruction instr, Address& pc,
-                                       RegisterState& regs) {
-            const Register rs = regs.get_register(instr.rtype.rs);
-            const Register rt = regs.get_register(instr.rtype.rt);
+                                       RegisterFile& reg_file) {
+            const Register rs = reg_file.get_register(instr.rtype.rs);
+            const Register rt = reg_file.get_register(instr.rtype.rt);
 
             using Func = Instruction::Func;
 
@@ -20,43 +20,44 @@ namespace mips_emulator {
 
             switch (func) {
                 case Func::e_add: {
-                    regs.set_register_signed(instr.rtype.rd, rs.s + rt.s);
+                    reg_file.set_register_signed(instr.rtype.rd, rs.s + rt.s);
                     break;
                 }
                 case Func::e_addu: {
-                    regs.set_register_unsigned(instr.rtype.rd, rs.u + rt.u);
+                    reg_file.set_register_unsigned(instr.rtype.rd, rs.u + rt.u);
                     break;
                 }
                 case Func::e_sub: {
-                    regs.set_register_signed(instr.rtype.rd, rs.s - rt.s);
+                    reg_file.set_register_signed(instr.rtype.rd, rs.s - rt.s);
                     break;
                 }
                 case Func::e_subu: {
-                    regs.set_register_unsigned(instr.rtype.rd, rs.u - rt.u);
+                    reg_file.set_register_unsigned(instr.rtype.rd, rs.u - rt.u);
                     break;
                 }
                 case Func::e_mul: {
-                    regs.set_register_signed(instr.rtype.rd, rs.s * rt.s);
+                    reg_file.set_register_signed(instr.rtype.rd, rs.s * rt.s);
                     break;
                 }
                 case Func::e_mulu: {
-                    regs.set_register_unsigned(instr.rtype.rd, rs.u * rt.u);
+                    reg_file.set_register_unsigned(instr.rtype.rd, rs.u * rt.u);
                     break;
                 }
                 case Func::e_and: {
-                    regs.set_register_unsigned(instr.rtype.rd, rs.u & rt.u);
+                    reg_file.set_register_unsigned(instr.rtype.rd, rs.u & rt.u);
                     break;
                 }
                 case Func::e_nor: {
-                    regs.set_register_unsigned(instr.rtype.rd, ~(rs.u | rt.u));
+                    reg_file.set_register_unsigned(instr.rtype.rd,
+                                                   ~(rs.u | rt.u));
                     break;
                 }
                 case Func::e_or: {
-                    regs.set_register_unsigned(instr.rtype.rd, rs.u | rt.u);
+                    reg_file.set_register_unsigned(instr.rtype.rd, rs.u | rt.u);
                     break;
                 }
                 case Func::e_xor: {
-                    regs.set_register_unsigned(instr.rtype.rd, rs.u ^ rt.u);
+                    reg_file.set_register_unsigned(instr.rtype.rd, rs.u ^ rt.u);
                     break;
                 }
                 case Func::e_jr: {
@@ -64,7 +65,7 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_jalr: {
-                    regs.set_register_unsigned(31, pc);
+                    reg_file.set_register_unsigned(31, pc);
                     pc = rs.u;
                     break;
                 }

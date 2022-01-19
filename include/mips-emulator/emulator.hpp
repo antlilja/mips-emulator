@@ -5,18 +5,18 @@
 #include <utility>
 
 namespace mips_emulator {
-    template <typename RegisterState, typename Memory>
+    template <typename RegisterFile, typename Memory>
     class Emulator {
     public:
-        using Register = typename RegisterState::Register;
-        using Address = typename RegisterState::Unsigned;
+        using Register = typename RegisterFile::Register;
+        using Address = typename RegisterFile::Unsigned;
 
-        using Executor = Executor<RegisterState>;
+        using Executor = Executor<RegisterFile>;
 
         template <typename... Args>
         Emulator(Args&&... args) : memory(std::forward<Args>(args)...) {}
 
-        RegisterState get_register_state() const noexcept { return regs; }
+        RegisterFile get_register_file() const noexcept { return reg_file; }
 
         void step() noexcept {
             const Instruction instr = memory.template read<Instruction>(pc);
@@ -24,7 +24,7 @@ namespace mips_emulator {
             switch (instr.get_type()) {
                     // R-Type
                 case 0: {
-                    Executor::handle_rtype_instr(instr, pc, regs);
+                    Executor::handle_rtype_instr(instr, pc, reg_file);
                     break;
                 }
                     // I-Type
@@ -43,7 +43,7 @@ namespace mips_emulator {
         }
 
     private:
-        RegisterState regs;
+        RegisterFile reg_file;
         Memory memory;
 
         Address pc;

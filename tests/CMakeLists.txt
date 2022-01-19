@@ -9,7 +9,7 @@ FetchContent_MakeAvailable(catch2)
 add_executable(mips_emulator_tests
 	main.cpp
 	
-	register_state.cpp
+	register_file.cpp
 	instruction.cpp
 	executor.cpp
 )

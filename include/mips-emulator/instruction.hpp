@@ -1,4 +1,6 @@
 #pragma once
+#include "mips-emulator/register_name.hpp"
+
 #include <cstdint>
 
 // Macros used to make sure structs are packed to fit the MIPS instruction size
@@ -66,41 +68,6 @@ namespace mips_emulator {
             e_jal = 3,
         };
 
-        enum class Register : uint8_t {
-            e_0 = 0,
-            e_at = 1,
-            e_v0 = 2,
-            e_v1 = 3,
-            e_a0 = 4,
-            e_a1 = 5,
-            e_a2 = 6,
-            e_a3 = 7,
-            e_t0 = 8,
-            e_t1 = 9,
-            e_t2 = 10,
-            e_t3 = 11,
-            e_t4 = 12,
-            e_t5 = 13,
-            e_t6 = 14,
-            e_t7 = 15,
-            e_s0 = 16,
-            e_s1 = 17,
-            e_s2 = 18,
-            e_s3 = 19,
-            e_s4 = 20,
-            e_s5 = 21,
-            e_s6 = 22,
-            e_s7 = 23,
-            e_t8 = 24,
-            e_t9 = 25,
-            e_k0 = 26,
-            e_k1 = 27,
-            e_gp = 28,
-            e_sp = 29,
-            e_fp = 30,
-            e_ra = 31,
-        };
-
         PACKED(struct General {
             uint8_t op : 6;
             uint32_t reserved : 26;
@@ -134,8 +101,9 @@ namespace mips_emulator {
         static_assert(sizeof(JType) == 4);
 
         // I-Type
-        Instruction(const Func func, const Register rd, const Register rs,
-                    const Register rt, const uint8_t shift_amount = 0) {
+        Instruction(const Func func, const RegisterName rd,
+                    const RegisterName rs, const RegisterName rt,
+                    const uint8_t shift_amount = 0) {
 
             constexpr uint8_t MASK = (1 << 5) - 1;
             rtype.zero = 0;
@@ -147,8 +115,8 @@ namespace mips_emulator {
         }
 
         // I-Type
-        Instruction(const ITypeOpcode opcode, const Register rs,
-                    const Register rt, const uint16_t immediate) {
+        Instruction(const ITypeOpcode opcode, const RegisterName rs,
+                    const RegisterName rt, const uint16_t immediate) {
             itype.op = static_cast<uint8_t>(opcode);
             itype.rt = static_cast<uint8_t>(rt);
             itype.rs = static_cast<uint8_t>(rs);

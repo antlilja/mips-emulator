@@ -1,9 +1,13 @@
 #include "mips-emulator/executor.hpp"
+#include "mips-emulator/instruction.hpp"
 #include "mips-emulator/register_state.hpp"
 
 #include <catch2/catch.hpp>
 
 using namespace mips_emulator;
+
+using Func = Instruction::Func;
+using Register = Instruction::Register;
 
 TEMPLATE_TEST_CASE("add", "[Executor]", RegisterState32, RegisterState64) {
     SECTION("Positive numbers") {
@@ -15,16 +19,12 @@ TEMPLATE_TEST_CASE("add", "[Executor]", RegisterState32, RegisterState64) {
         state.set_register_signed(8, 1);
         state.set_register_signed(9, 5);
 
-        // TODO: Create a helper function to do this
-        Instruction instr;
-        instr.raw = 0;
-        instr.rtype.func = 32;
-        instr.rtype.rs = 8;
-        instr.rtype.rt = 9;
-        instr.rtype.rd = 10;
+        Instruction instr(Func::e_add, Register::e_t2, Register::e_t0,
+                          Register::e_t1);
 
         TestExecutor::handle_rtype_instr(instr, pc, state);
 
-        REQUIRE(state.get_register(10).s == 6);
+        REQUIRE(state.get_register(static_cast<uint8_t>(Register::e_t2)).s ==
+                6);
     }
 }

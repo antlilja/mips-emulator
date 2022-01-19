@@ -21,29 +21,93 @@
 
 namespace mips_emulator {
     union Instruction {
-        PACKED(struct RType {
-            // Func constants for R-Type instructions
-            static constexpr uint8_t e_add = 32;
-            static constexpr uint8_t e_addu = 33;
-            static constexpr uint8_t e_sub = 34;
-            static constexpr uint8_t e_subu = 35;
-            static constexpr uint8_t e_mul = 24;
-            static constexpr uint8_t e_mulu = 26;
-            static constexpr uint8_t e_and = 36;
-            static constexpr uint8_t e_nor = 39;
-            static constexpr uint8_t e_or = 37;
-            static constexpr uint8_t e_xor = 38;
-            static constexpr uint8_t e_jr = 8;
-            static constexpr uint8_t e_jalr = 9;
-            static constexpr uint8_t e_slt = 42;
-            static constexpr uint8_t e_sltu = 43;
-            static constexpr uint8_t e_sll = 0;
-            static constexpr uint8_t e_sllv = 4;
-            static constexpr uint8_t e_sra = 3;
-            static constexpr uint8_t e_srl = 2;
-            static constexpr uint8_t e_srlv = 6;
+        enum class Func : uint8_t {
+            e_add = 32,
+            e_addu = 33,
+            e_sub = 34,
+            e_subu = 35,
+            e_mul = 24,
+            e_mulu = 26,
+            e_and = 36,
+            e_nor = 39,
+            e_or = 37,
+            e_xor = 38,
+            e_jr = 8,
+            e_jalr = 9,
+            e_slt = 42,
+            e_sltu = 43,
+            e_sll = 0,
+            e_sllv = 4,
+            e_sra = 3,
+            e_srl = 2,
+            e_srlv = 6,
+        };
 
+        enum class ITypeOpcode : uint8_t {
+            e_beq = 4,
+            e_bne = 5,
+            e_addi = 8,
+            e_addiu = 9,
+            e_slti = 10,
+            e_sltiu = 11,
+            e_andi = 12,
+            e_ori = 13,
+            e_xori = 14,
+            e_lb = 32,
+            e_lbu = 36,
+            e_lui = 15,
+            e_lw = 35,
+            e_sb = 40,
+            e_sw = 43,
+        };
+
+        enum class JTypeOpcode : uint8_t {
+            e_j = 2,
+            e_jal = 3,
+        };
+
+        enum class Register : uint8_t {
+            e_0 = 0,
+            e_at = 1,
+            e_v0 = 2,
+            e_v1 = 3,
+            e_a0 = 4,
+            e_a1 = 5,
+            e_a2 = 6,
+            e_a3 = 7,
+            e_t0 = 8,
+            e_t1 = 9,
+            e_t2 = 10,
+            e_t3 = 11,
+            e_t4 = 12,
+            e_t5 = 13,
+            e_t6 = 14,
+            e_t7 = 15,
+            e_s0 = 16,
+            e_s1 = 17,
+            e_s2 = 18,
+            e_s3 = 19,
+            e_s4 = 20,
+            e_s5 = 21,
+            e_s6 = 22,
+            e_s7 = 23,
+            e_t8 = 24,
+            e_t9 = 25,
+            e_k0 = 26,
+            e_k1 = 27,
+            e_gp = 28,
+            e_sp = 29,
+            e_fp = 30,
+            e_ra = 31,
+        };
+
+        PACKED(struct General {
             uint8_t op : 6;
+            uint32_t reserved : 26;
+        });
+
+        PACKED(struct RType {
+            uint8_t zero : 6;
             uint8_t rs : 5;
             uint8_t rt : 5;
             uint8_t rd : 5;
@@ -60,20 +124,52 @@ namespace mips_emulator {
 
         PACKED(struct JType {
             uint8_t op : 6;
-            uint32_t imm : 26;
+            uint32_t address : 26;
         });
 
-        // Make sure R, I and J type instruction structs are the same size
+        // Make sure internal structs are the same size
+        static_assert(sizeof(General) == 4);
         static_assert(sizeof(RType) == 4);
         static_assert(sizeof(IType) == 4);
         static_assert(sizeof(JType) == 4);
 
+        // I-Type
+        Instruction(const Func func, const Register rd, const Register rs,
+                    const Register rt, const uint8_t shift_amount = 0) {
+
+            constexpr uint8_t MASK = (1 << 5) - 1;
+            rtype.zero = 0;
+            rtype.func = static_cast<uint8_t>(func);
+            rtype.rd = static_cast<uint8_t>(rd);
+            rtype.rs = static_cast<uint8_t>(rs);
+            rtype.rt = static_cast<uint8_t>(rt);
+            rtype.shamt = shift_amount & MASK;
+        }
+
+        // I-Type
+        Instruction(const ITypeOpcode opcode, const Register rs,
+                    const Register rt, const uint16_t immediate) {
+            itype.op = static_cast<uint8_t>(opcode);
+            itype.rt = static_cast<uint8_t>(rt);
+            itype.rs = static_cast<uint8_t>(rs);
+            itype.imm = immediate;
+        }
+
+        // J-Type
+        Instruction(const JTypeOpcode opcode, const uint32_t address) {
+            constexpr uint32_t MASK = (1 << 26) - 1;
+
+            jtype.op = static_cast<uint8_t>(opcode);
+            jtype.address = address & MASK;
+        }
+
         // R-Type: 0
         // I-Type: 2
         // J-Type: Otherwise
-        inline uint8_t get_type() const { return rtype.op & ~1; }
+        inline uint8_t get_type() const { return general.op & ~1; }
 
-        uint32_t raw;
+        uint32_t raw = 0;
+        General general;
 
         RType rtype;
         IType itype;

@@ -16,16 +16,14 @@ TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
         TestType reg_file;
         Address pc = 0;
 
-        reg_file.set_register_signed(8, 1);
-        reg_file.set_register_signed(9, 5);
+        reg_file.set_signed(RegisterName::e_t0, 1);
+        reg_file.set_signed(RegisterName::e_t1, 5);
 
         Instruction instr(Func::e_add, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
         TestExecutor::handle_rtype_instr(instr, pc, reg_file);
 
-        REQUIRE(
-            reg_file.get_register(static_cast<uint8_t>(RegisterName::e_t2)).s ==
-            6);
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 6);
     }
 }

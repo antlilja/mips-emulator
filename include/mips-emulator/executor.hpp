@@ -1,13 +1,12 @@
 #pragma once
 #include "mips-emulator/instruction.hpp"
 
-#include <cassert>
-
 namespace mips_emulator {
     namespace Executor {
         template <typename RegisterFile, typename Memory>
-        inline static void step(RegisterFile& reg_file, Memory& memory,
-                                typename RegisterFile::Unsigned& pc) {
+        [[nodiscard]] inline static bool
+        step(RegisterFile& reg_file, Memory& memory,
+             typename RegisterFile::Unsigned& pc) {
             using Type = Instruction::Type;
 
             const Instruction instr = memory.template read<Instruction>(pc);
@@ -15,23 +14,21 @@ namespace mips_emulator {
             pc += sizeof(Instruction);
 
             switch (instr.get_type()) {
-                case Type::e_rtype: {
-                    handle_rtype_instr(instr, pc, reg_file);
-                    break;
-                }
+                case Type::e_rtype:
+                    return handle_rtype_instr(instr, pc, reg_file);
                 case Type::e_itype: {
                     // TODO: Handle I-Type instructions
-                    break;
+                    return false;
                 }
                 case Type::e_j_type: {
                     // TODO: Handle J-Type instructions
-                    break;
+                    return false;
                 }
             }
         }
 
         template <typename RegisterFile>
-        inline static void
+        [[nodiscard]] inline static bool
         handle_rtype_instr(const Instruction instr,
                            typename RegisterFile::Unsigned& pc,
                            RegisterFile& reg_file) {
@@ -95,14 +92,10 @@ namespace mips_emulator {
                     break;
                 }
                     // TODO: Handle shift instructions
-                default: {
-                    // TODO: Don't asserts for error handling?
-                    assert(false);
-                    break;
-                }
+                default: return false;
             }
-        }
 
-        // TODO: Handle I and J type instructions
+            return true;
+        }
     }; // namespace Executor
 } // namespace mips_emulator

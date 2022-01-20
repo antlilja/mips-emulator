@@ -19,7 +19,9 @@ namespace mips_emulator {
         }
         RegisterFile clone_register_file() const noexcept { return reg_file; }
 
-        void step() noexcept { Executor::step(reg_file, memory, pc); }
+        [[nodiscard]] bool step() noexcept {
+            return Executor::step(reg_file, memory, pc);
+        }
 
     private:
         RegisterFile reg_file;

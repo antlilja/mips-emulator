@@ -21,7 +21,8 @@ TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
         Instruction instr(Func::e_add, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        Executor::handle_rtype_instr(instr, pc, reg_file);
+        const bool no_error = Executor::handle_rtype_instr(instr, pc, reg_file);
+        REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 6);
     }

@@ -11,8 +11,6 @@ namespace mips_emulator {
         using Register = typename RegisterFile::Register;
         using Address = typename RegisterFile::Unsigned;
 
-        using Executor = Executor<RegisterFile>;
-
         template <typename... Args>
         Emulator(Args&&... args) : memory(std::forward<Args>(args)...) {}
 

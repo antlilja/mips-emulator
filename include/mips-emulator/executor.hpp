@@ -4,17 +4,17 @@
 #include <cassert>
 
 namespace mips_emulator {
-    template <typename RegisterFile>
-    struct Executor {
-        using Register = typename RegisterFile::Register;
-        using Address = typename RegisterFile::Unsigned;
-
-        static void handle_rtype_instr(const Instruction instr, Address& pc,
+    namespace Executor {
+        template <typename RegisterFile>
+        static void handle_rtype_instr(const Instruction instr,
+                                       typename RegisterFile::Unsigned& pc,
                                        RegisterFile& reg_file) {
+
+            using Register = typename RegisterFile::Register;
+            using Func = Instruction::Func;
+
             const Register rs = reg_file.get(instr.rtype.rs);
             const Register rt = reg_file.get(instr.rtype.rt);
-
-            using Func = Instruction::Func;
 
             const Func func = static_cast<Func>(instr.rtype.func);
 
@@ -78,5 +78,5 @@ namespace mips_emulator {
         }
 
         // TODO: Handle I and J type instructions
-    };
+    }; // namespace Executor
 } // namespace mips_emulator

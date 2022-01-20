@@ -16,29 +16,7 @@ namespace mips_emulator {
 
         RegisterFile get_register_file() const noexcept { return reg_file; }
 
-        void step() noexcept {
-            const Instruction instr = memory.template read<Instruction>(pc);
-
-            switch (instr.get_type()) {
-                    // R-Type
-                case 0: {
-                    Executor::handle_rtype_instr(instr, pc, reg_file);
-                    break;
-                }
-                    // I-Type
-                case 2: {
-                    // TODO: Handle I-Type instructions
-                    break;
-                }
-                    // J-Type
-                default: {
-                    // TODO: Handle J-Type instructions
-                    break;
-                }
-            }
-
-            pc += sizeof(Instruction);
-        }
+        void step() noexcept { Executor::step(reg_file, memory, pc); }
 
     private:
         RegisterFile reg_file;

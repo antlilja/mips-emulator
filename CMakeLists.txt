@@ -16,5 +16,6 @@ target_include_directories(mips_emulator INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/i
 target_compile_features(mips_emulator INTERFACE cxx_std_17)
 
 if(MIPS_EMULATOR_BUILD_TESTS)
+  include(CTest)
   add_subdirectory(tests)
 endif()

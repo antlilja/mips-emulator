@@ -6,6 +6,9 @@ FetchContent_Declare(catch2
 
 FetchContent_MakeAvailable(catch2)
 
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
+include(Catch)
+
 add_executable(mips_emulator_tests
 	main.cpp
 	
@@ -20,4 +23,4 @@ target_link_libraries(mips_emulator_tests
 		Catch2::Catch2
 )
 
-# TODO: Maybe add test running target
+catch_discover_tests(mips_emulator_tests)

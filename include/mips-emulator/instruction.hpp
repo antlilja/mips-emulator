@@ -23,6 +23,12 @@
 
 namespace mips_emulator {
     union Instruction {
+        enum class Type {
+            e_rtype,
+            e_itype,
+            e_j_type,
+        };
+
         enum class Func : uint8_t {
             e_add = 32,
             e_addu = 33,
@@ -131,10 +137,13 @@ namespace mips_emulator {
             jtype.address = address & MASK;
         }
 
-        // R-Type: 0
-        // I-Type: 2
-        // J-Type: Otherwise
-        inline uint8_t get_type() const { return general.op & ~1; }
+        inline Type get_type() const {
+            switch (general.op & ~1) {
+                case 0: return Type::e_rtype;
+                case 2: return Type::e_itype;
+            }
+            return Type::e_j_type;
+        }
 
         uint32_t raw = 0;
         General general;

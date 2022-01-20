@@ -8,21 +8,20 @@ namespace mips_emulator {
         template <typename RegisterFile, typename Memory>
         inline static void step(RegisterFile& reg_file, Memory& memory,
                                 typename RegisterFile::Unsigned& pc) {
+            using Type = Instruction::Type;
+
             const Instruction instr = memory.template read<Instruction>(pc);
 
             switch (instr.get_type()) {
-                    // R-Type
-                case 0: {
+                case Type::e_rtype: {
                     handle_rtype_instr(instr, pc, reg_file);
                     break;
                 }
-                    // I-Type
-                case 2: {
+                case Type::e_itype: {
                     // TODO: Handle I-Type instructions
                     break;
                 }
-                    // J-Type
-                default: {
+                case Type::e_j_type: {
                     // TODO: Handle J-Type instructions
                     break;
                 }

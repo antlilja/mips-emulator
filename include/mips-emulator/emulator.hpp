@@ -14,7 +14,7 @@ namespace mips_emulator {
         template <typename... Args>
         Emulator(Args&&... args) : memory(std::forward<Args>(args)...) {}
 
-        RegisterFile get_register_file() const noexcept { return reg_file; }
+        RegisterFile clone_register_file() const noexcept { return reg_file; }
 
         void step() noexcept { Executor::step(reg_file, memory, pc); }
 

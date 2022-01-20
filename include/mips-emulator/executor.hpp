@@ -12,6 +12,8 @@ namespace mips_emulator {
 
             const Instruction instr = memory.template read<Instruction>(pc);
 
+            pc += sizeof(Instruction);
+
             switch (instr.get_type()) {
                 case Type::e_rtype: {
                     handle_rtype_instr(instr, pc, reg_file);
@@ -26,8 +28,6 @@ namespace mips_emulator {
                     break;
                 }
             }
-
-            pc += sizeof(Instruction);
         }
 
         template <typename RegisterFile>

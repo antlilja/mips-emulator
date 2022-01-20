@@ -2,7 +2,6 @@
 #include "mips-emulator/register_name.hpp"
 
 #include <cstdint>
-#include <cassert>
 
 namespace mips_emulator {
     template <typename TUnsigned, typename TSigned>
@@ -22,17 +21,16 @@ namespace mips_emulator {
         // Make sure union has the same size as the word size
         static_assert(sizeof(Register) == sizeof(Unsigned));
 
-        static constexpr std::size_t REGISTER_COUNT = 32;
+        static constexpr uint8_t REGISTER_COUNT = 32;
+        static constexpr uint8_t INDEX_MASK = REGISTER_COUNT - 1;
 
         Register get(const RegisterName reg) const noexcept {
             return get(static_cast<uint8_t>(reg));
         }
 
         Register get(const uint8_t index) const noexcept {
-            // TODO: Maybe use something other than asserts here,
-            // return some error code instead?
-            assert(index < REGISTER_COUNT);
-            return regs[index];
+            // Mask index in order to not access any out of bounds memory
+            return regs[index & INDEX_MASK];
         }
 
         void set_unsigned(const RegisterName reg,
@@ -41,10 +39,8 @@ namespace mips_emulator {
         }
 
         void set_unsigned(const uint8_t index, const Unsigned value) noexcept {
-            // TODO: Maybe use something other than asserts here,
-            // return some error code instead?
-            assert(index < REGISTER_COUNT);
-            regs[index].u = value;
+            // Mask index in order to not access any out of bounds memory
+            regs[index & INDEX_MASK].u = value;
 
             // Register $0 should always be set to zero
             regs[0].u = 0;
@@ -55,10 +51,8 @@ namespace mips_emulator {
         }
 
         void set_signed(const uint8_t index, const Signed value) noexcept {
-            // TODO: Maybe use something other than asserts here,
-            // return some error code instead?
-            assert(index < REGISTER_COUNT);
-            regs[index].s = value;
+            // Mask index in order to not access any out of bounds memory
+            regs[index & INDEX_MASK].s = value;
 
             // Register $0 should always be set to zero
             regs[0].u = 0;

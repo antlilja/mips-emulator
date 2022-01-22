@@ -101,10 +101,14 @@ namespace mips_emulator {
         });
 
         // Make sure internal structs are the same size
-        static_assert(sizeof(General) == 4);
-        static_assert(sizeof(RType) == 4);
-        static_assert(sizeof(IType) == 4);
-        static_assert(sizeof(JType) == 4);
+        static_assert(sizeof(General) == 4,
+                      "Instruction::General bitfield is not 4 bytes in size");
+        static_assert(sizeof(RType) == 4,
+                      "Instruction::RType bitfield is not 4 bytes in size");
+        static_assert(sizeof(IType) == 4,
+                      "Instruction::IType bitfield is not 4 bytes in size");
+        static_assert(sizeof(JType) == 4,
+                      "Instruction::JType bitfield is not 4 bytes in size");
 
         // I-Type
         Instruction(const Func func, const RegisterName rd,
@@ -154,7 +158,8 @@ namespace mips_emulator {
     };
 
     // Make sure Instruction union matches the MIPS instruction size
-    static_assert(sizeof(Instruction) == 4);
+    static_assert(sizeof(Instruction) == 4,
+                  "Instruction union is not 4 bytes in size");
 } // namespace mips_emulator
 
 // Undefine macro in order to not leak it out of the header

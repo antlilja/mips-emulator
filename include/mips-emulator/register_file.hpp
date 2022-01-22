@@ -16,10 +16,13 @@ namespace mips_emulator {
         };
 
         // Make sure we only have one word size
-        static_assert(sizeof(Unsigned) == sizeof(Signed));
+        static_assert(sizeof(Unsigned) == sizeof(Signed),
+                      "Unsigned and Signed types are not the same size");
 
         // Make sure union has the same size as the word size
-        static_assert(sizeof(Register) == sizeof(Unsigned));
+        static_assert(
+            sizeof(Register) == sizeof(Unsigned),
+            "Register union is not the same size as Unsigned or Signed types");
 
         static constexpr uint8_t REGISTER_COUNT = 32;
         static constexpr uint8_t INDEX_MASK = REGISTER_COUNT - 1;

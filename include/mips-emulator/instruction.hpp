@@ -75,28 +75,28 @@ namespace mips_emulator {
         };
 
         PACKED(struct General {
-            uint8_t op : 6;
+            uint32_t op : 6;
             uint32_t reserved : 26;
         });
 
         PACKED(struct RType {
-            uint16_t zero : 6;
-            uint16_t rs : 5;
-            uint16_t rt : 5;
-            uint16_t rd : 5;
-            uint16_t shamt : 5;
-            uint16_t func : 6;
+            uint32_t zero : 6;
+            uint32_t rs : 5;
+            uint32_t rt : 5;
+            uint32_t rd : 5;
+            uint32_t shamt : 5;
+            uint32_t func : 6;
         });
 
         PACKED(struct IType {
-            uint16_t op : 6;
-            uint16_t rs : 5;
-            uint16_t rt : 5;
-            uint16_t imm : 16;
+            uint32_t op : 6;
+            uint32_t rs : 5;
+            uint32_t rt : 5;
+            uint32_t imm : 16;
         });
 
         PACKED(struct JType {
-            uint8_t op : 6;
+            uint32_t op : 6;
             uint32_t address : 26;
         });
 

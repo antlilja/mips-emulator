@@ -17,6 +17,7 @@ namespace mips_emulator {
                 case Type::e_rtype:
                     return handle_rtype_instr(instr, pc, reg_file);
                 case Type::e_itype: {
+                    return handle_itype_instr(instr, pc, reg_file);
                     // TODO: Handle I-Type instructions
                     return false;
                 }
@@ -92,6 +93,32 @@ namespace mips_emulator {
                     break;
                 }
                     // TODO: Handle shift instructions
+                default: return false;
+            }
+
+            return true;
+        }
+
+        
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_itype_instr(const Instruction instr,
+                           typename RegisterFile::Unsigned& pc,
+                           RegisterFile& reg_file) {
+
+            using Register = typename RegisterFile::Register;
+            using IOp = Instruction::ITypeOpcode;
+
+            const Register rs = reg_file.get(instr.rtype.rs);
+
+            const IOp op = static_cast<IOp>(instr.itype.op);
+
+            switch (op) {
+                case IOp::e_addi: {
+                    reg_file.set_signed(instr.itype.rt, rs.s + instr.itype.imm);
+                    break;
+                }
+
                 default: return false;
             }
 

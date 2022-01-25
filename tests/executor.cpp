@@ -29,6 +29,42 @@ TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
+TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32, RegisterFile64) {
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
+        Address pc = 0;
+
+        reg_file.set_signed(RegisterName::e_t0, 10);
+        reg_file.set_signed(RegisterName::e_t1, 1);
+
+        Instruction instr(Func::e_sub, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, pc, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 9);
+    }
+
+	SECTION("Negative numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
+        Address pc = 0;
+
+        reg_file.set_signed(RegisterName::e_t0, -3);
+        reg_file.set_signed(RegisterName::e_t1, -5);
+
+        Instruction instr(Func::e_sub, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, pc, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 2);
+    }
+}
+
 TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;

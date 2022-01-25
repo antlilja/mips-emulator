@@ -8,6 +8,7 @@
 using namespace mips_emulator;
 
 using Func = Instruction::Func;
+using IOp = Instruction::ITypeOpcode;
 
 TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
     SECTION("Positive numbers") {
@@ -44,5 +45,23 @@ TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
 		REQUIRE(no_error);
 
 		REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b111); // 7
+	}
+}
+
+TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
+	SECTION("Positive numbers") {
+		using Address = typename TestType::Unsigned;
+		TestType reg_file;
+		Address pc = 0;
+
+		reg_file.set_unsigned(RegisterName::e_t0, 100202);
+
+		Instruction instr(IOp::e_addi, RegisterName::e_t0, RegisterName::e_t1,
+			22020);
+
+		const bool no_error = Executor::handle_itype_instr(instr, pc, reg_file);
+		REQUIRE(no_error);
+
+		REQUIRE(reg_file.get(RegisterName::e_t1).u == 122222);
 	}
 }

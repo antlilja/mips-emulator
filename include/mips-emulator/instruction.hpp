@@ -125,8 +125,8 @@ namespace mips_emulator {
         }
 
         // I-Type
-        Instruction(const ITypeOpcode opcode, const RegisterName rs,
-                    const RegisterName rt, const uint16_t immediate) {
+        Instruction(const ITypeOpcode opcode, const RegisterName rt,
+                    const RegisterName rs, const uint16_t immediate) {
             itype.op = static_cast<uint8_t>(opcode);
             itype.rt = static_cast<uint8_t>(rt);
             itype.rs = static_cast<uint8_t>(rs);

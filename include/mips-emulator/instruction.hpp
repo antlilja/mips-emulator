@@ -75,29 +75,29 @@ namespace mips_emulator {
         };
 
         PACKED(struct General {
-            uint32_t op : 6;
             uint32_t reserved : 26;
+            uint32_t op : 6;
         });
 
         PACKED(struct RType {
-            uint32_t zero : 6;
-            uint32_t rs : 5;
-            uint32_t rt : 5;
-            uint32_t rd : 5;
-            uint32_t shamt : 5;
             uint32_t func : 6;
+            uint32_t shamt : 5;
+            uint32_t rd : 5;
+            uint32_t rt : 5;
+            uint32_t rs : 5;
+            uint32_t zero : 6;
         });
 
         PACKED(struct IType {
-            uint32_t op : 6;
-            uint32_t rs : 5;
-            uint32_t rt : 5;
             uint32_t imm : 16;
+            uint32_t rt : 5;
+            uint32_t rs : 5;
+            uint32_t op : 6;
         });
 
         PACKED(struct JType {
-            uint32_t op : 6;
             uint32_t address : 26;
+            uint32_t op : 6;
         });
 
         // Make sure internal structs are the same size
@@ -110,7 +110,7 @@ namespace mips_emulator {
         static_assert(sizeof(JType) == 4,
                       "Instruction::JType bitfield is not 4 bytes in size");
 
-        // I-Type
+        // R-Type
         Instruction(const Func func, const RegisterName rd,
                     const RegisterName rs, const RegisterName rt,
                     const uint8_t shift_amount = 0) {

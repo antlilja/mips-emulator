@@ -4,23 +4,18 @@
 namespace mips_emulator {
     namespace Executor {
         template <typename RegisterFile, typename Memory>
-        [[nodiscard]] inline static bool
-        step(RegisterFile& reg_file, Memory& memory,
-             typename RegisterFile::Unsigned& pc) {
+        [[nodiscard]] inline static bool step(RegisterFile& reg_file,
+                                              Memory& memory) {
             using Type = Instruction::Type;
 
-            const Instruction instr = memory.template read<Instruction>(pc);
+            const Instruction instr =
+                memory.template read<Instruction>(reg_file.get_pc());
 
-            pc += sizeof(Instruction);
+            reg_file.inc_pc();
 
             switch (instr.get_type()) {
-                case Type::e_rtype:
-                    return handle_rtype_instr(instr, pc, reg_file);
-                case Type::e_itype: {
-                    return handle_itype_instr(instr, pc, reg_file);
-                    // TODO: Handle I-Type instructions
-                    return false;
-                }
+                case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
+                case Type::e_itype: return handle_itype_instr(instr, reg_file);
                 case Type::e_j_type: {
                     // TODO: Handle J-Type instructions
                     return false;
@@ -30,9 +25,7 @@ namespace mips_emulator {
 
         template <typename RegisterFile>
         [[nodiscard]] inline static bool
-        handle_rtype_instr(const Instruction instr,
-                           typename RegisterFile::Unsigned& pc,
-                           RegisterFile& reg_file) {
+        handle_rtype_instr(const Instruction instr, RegisterFile& reg_file) {
 
             using Register = typename RegisterFile::Register;
             using Func = Instruction::Func;
@@ -84,12 +77,12 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_jr: {
-                    pc = rs.u;
+                    reg_file.set_pc(rs.u);
                     break;
                 }
                 case Func::e_jalr: {
-                    reg_file.set_unsigned(31, pc);
-                    pc = rs.u;
+                    reg_file.set_unsigned(31, reg_file.get_pc());
+                    reg_file.set_pc(rs.u);
                     break;
                 }
                     // TODO: Handle shift instructions
@@ -99,12 +92,9 @@ namespace mips_emulator {
             return true;
         }
 
-        
         template <typename RegisterFile>
         [[nodiscard]] inline static bool
-        handle_itype_instr(const Instruction instr,
-                           typename RegisterFile::Unsigned& pc,
-                           RegisterFile& reg_file) {
+        handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
 
             using Register = typename RegisterFile::Register;
             using IOp = Instruction::ITypeOpcode;

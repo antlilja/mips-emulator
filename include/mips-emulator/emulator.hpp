@@ -20,13 +20,11 @@ namespace mips_emulator {
         RegisterFile clone_register_file() const noexcept { return reg_file; }
 
         [[nodiscard]] bool step() noexcept {
-            return Executor::step(reg_file, memory, pc);
+            return Executor::step(reg_file, memory);
         }
 
     private:
         RegisterFile reg_file;
         Memory memory;
-
-        Address pc;
     };
 } // namespace mips_emulator

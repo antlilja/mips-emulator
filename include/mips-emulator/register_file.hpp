@@ -27,6 +27,10 @@ namespace mips_emulator {
         static constexpr uint8_t REGISTER_COUNT = 32;
         static constexpr uint8_t INDEX_MASK = REGISTER_COUNT - 1;
 
+        Unsigned get_pc() const noexcept { return pc; }
+        void set_pc(Unsigned new_pc) noexcept { pc = new_pc; }
+        void inc_pc() noexcept { return pc += 4; }
+
         Register get(const RegisterName reg) const noexcept {
             return get(static_cast<uint8_t>(reg));
         }
@@ -67,6 +71,7 @@ namespace mips_emulator {
         }
 
     private:
+        Unsigned pc = 0;
         Register regs[REGISTER_COUNT] = {};
     };
 

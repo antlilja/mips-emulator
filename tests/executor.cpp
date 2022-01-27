@@ -86,7 +86,7 @@ TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
         using Address = typename TestType::Unsigned;
         TestType reg_file;
 
-        reg_file.set_unsigned(RegisterName::e_t0, 100202);
+        reg_file.set_unsigned(RegisterName::e_t1, 100202);
 
         Instruction instr(IOp::e_addi, RegisterName::e_t0, RegisterName::e_t1,
                           22020);
@@ -94,6 +94,6 @@ TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
-        REQUIRE(reg_file.get(RegisterName::e_t1).u == 122222);
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == 122222);
     }
 }

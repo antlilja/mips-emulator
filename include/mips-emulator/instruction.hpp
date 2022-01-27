@@ -110,7 +110,7 @@ namespace mips_emulator {
         static_assert(sizeof(JType) == 4,
                       "Instruction::JType bitfield is not 4 bytes in size");
 
-        // I-Type
+        // R-Type
         Instruction(const Func func, const RegisterName rd,
                     const RegisterName rs, const RegisterName rt,
                     const uint8_t shift_amount = 0) {

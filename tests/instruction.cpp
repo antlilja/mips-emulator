@@ -23,6 +23,42 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
 
         REQUIRE(instr.raw == 0x01a44020);
     }
+
+    SECTION("sll") {
+        const Instruction instr(Func::e_sll, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+
+        REQUIRE(instr.raw == 0x00094100);
+    }
+
+    SECTION("sllv") {
+        const Instruction instr(Func::e_sllv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+
+        REQUIRE(instr.raw == 0x01494004);
+    }
+
+    SECTION("sra") {
+        const Instruction instr(Func::e_sra, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+
+        REQUIRE(instr.raw == 0x00094103);
+    }
+
+    SECTION("srav") {
+        const Instruction instr(Func::e_srav, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+
+        REQUIRE(instr.raw == 0x01494007);
+    }
+
+    SECTION("srl") {
+        const Instruction instr(Func::e_srl, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+
+        REQUIRE(instr.raw == 0x00094102);
+    }
+
+    SECTION("srlv") {
+        const Instruction instr(Func::e_srlv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+
+        REQUIRE(instr.raw == 0x01494006);
+    }
 }
 
 TEST_CASE("I-Type instruction", "[Instruction]") {

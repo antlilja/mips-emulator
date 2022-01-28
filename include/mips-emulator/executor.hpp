@@ -85,7 +85,34 @@ namespace mips_emulator {
                     reg_file.set_pc(rs.u);
                     break;
                 }
-                    // TODO: Handle shift instructions
+                case Func::e_sll: {
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u << instr.rtype.shamt);
+                    break;
+                }
+                case Func::e_sllv: {
+                    // rt is shifted left by the number specified by the lower 5 bits of rs and then stored in rd
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u << (rs.u & 0x1F));
+                    break;
+                }
+                case Func::e_sra: {
+                    // Arithmetic right shift on signed values are implementation dependent, testing needed
+                    reg_file.set_signed(instr.rtype.rd, rt.s >> instr.rtype.shamt);
+                    break;
+                }
+                case Func::e_srav: {
+                    // rt is shifted right by the number specified by the lower 5 bits of rs, sign extended, and then stored in rd
+                    reg_file.set_signed(instr.rtype.rd, rt.s >> (rs.u & 0x1F));
+                    break;
+                }
+                case Func::e_srl: {
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u >> instr.rtype.shamt);
+                    break;
+                }
+                case Func::e_srlv: {
+                    // rt is shifted right by the number specified by the lower 5 bits of rs, inserting 0's, and then stored in rd
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u >> (rs.u & 0x1F));
+                    break;
+                }
                 default: return false;
             }
 

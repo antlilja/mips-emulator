@@ -95,13 +95,21 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_sra: {
-                    // Arithmetic right shift on signed values are implementation dependent, testing needed
-                    reg_file.set_signed(instr.rtype.rd, rt.s >> instr.rtype.shamt);
+                    // Arithmetic right shift for signed values are implementation dependent, doing this to ensure portability
+                    if (rt.s < 0) {
+                        reg_file.set_signed(instr.rtype.rd, rt.s >> instr.rtype.shamt | ~(~0U >> instr.rtype.shamt));
+                    } else {
+                        reg_file.set_signed(instr.rtype.rd, rt.s >> instr.rtype.shamt);
+                    }                    
                     break;
                 }
                 case Func::e_srav: {
-                    // rt is shifted right by the number specified by the lower 5 bits of rs, sign extended, and then stored in rd
-                    reg_file.set_signed(instr.rtype.rd, rt.s >> (rs.u & 0x1F));
+                    // Arithmetic right shift for signed values are implementation dependent, doing this to ensure portability
+                    if (rt.s < 0) {
+                        reg_file.set_signed(instr.rtype.rd, rt.s >> (rs.u & 0x1F) | ~(~0U >> (rs.u & 0x1F)));
+                    } else {
+                        reg_file.set_signed(instr.rtype.rd, rt.s >> (rs.u & 0x1F));
+                    }
                     break;
                 }
                 case Func::e_srl: {

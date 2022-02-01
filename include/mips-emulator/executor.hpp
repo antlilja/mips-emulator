@@ -24,6 +24,18 @@ namespace mips_emulator {
                     // TODO: Handle J-Type instructions
                     return false;
                 }
+                case Type::e_fpu_rtype: {
+                    // TODO: Handle FPU R-Type instructions
+                    return false;
+                }
+                case Type::e_fpu_ttype: {
+                    // TODO: Handle FPU Transfer instructions
+                    return false;
+                }
+                case Type::e_fpu_btype: {
+                    // TODO: Handle FPU Brach instructions
+                    return false;
+                }
             }
         }
 

@@ -9,6 +9,7 @@ using namespace mips_emulator;
 
 using Func = Instruction::Func;
 using IOp = Instruction::ITypeOpcode;
+using JOp = Instruction::JTypeOpcode;
 
 TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
     SECTION("Positive numbers") {
@@ -224,5 +225,37 @@ TEMPLATE_TEST_CASE("lui", "[Executor]", RegisterFile32, RegisterFile64) {
 		REQUIRE(no_error);
 
 		REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xbeef0000);
+	}
+}
+
+TEMPLATE_TEST_CASE("j", "[Executor]", RegisterFile32, RegisterFile64) {
+	SECTION("Positive numbers") {
+		using Unsigned = typename TestType::Unsigned;
+		TestType reg_file;
+        reg_file.set_pc(0x10beef00);
+
+		Instruction instr(JOp::e_j, 0x003fc);
+
+		const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
+		REQUIRE(no_error);
+
+		REQUIRE(reg_file.get_pc() == 0x10000ff0);
+
+	}
+}
+
+TEMPLATE_TEST_CASE("jal", "[Executor]", RegisterFile32, RegisterFile64) {
+	SECTION("Positive numbers") {
+		using Unsigned = typename TestType::Unsigned;
+		TestType reg_file;
+        reg_file.set_pc(0x10beef00);
+
+		Instruction instr(JOp::e_jal, 0x003fc);
+
+		const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
+		REQUIRE(no_error);
+
+		REQUIRE(reg_file.get_pc() == 0x10000ff0);
+        REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x10beef04);
 	}
 }

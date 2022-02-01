@@ -26,7 +26,7 @@ namespace mips_emulator {
         enum class Type {
             e_rtype,
             e_itype,
-            e_j_type,
+            e_jtype,
             e_fpu_rtype,
             e_fpu_btype,
             e_fpu_ttype,
@@ -293,7 +293,7 @@ namespace mips_emulator {
                 case 0: return Type::e_rtype;
                 case 2: return Type::e_itype;
             }
-            return Type::e_j_type;
+            return Type::e_jtype;
         }
 
         uint32_t raw = 0;

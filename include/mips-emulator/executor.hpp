@@ -96,20 +96,17 @@ namespace mips_emulator {
                 }
                 case Func::e_sra: {
                     // Arithmetic right shift for signed values are implementation dependent, doing this to ensure portability
-                    if (rt.s < 0) {
-                        reg_file.set_signed(instr.rtype.rd, rt.s >> instr.rtype.shamt | ~(~0U >> instr.rtype.shamt));
-                    } else {
-                        reg_file.set_signed(instr.rtype.rd, rt.s >> instr.rtype.shamt);
-                    }                    
+                    const auto reg_bit_size = (sizeof(typename RegisterFile::Unsigned)*8);
+                    const typename RegisterFile::Unsigned ext = (~0) << (reg_bit_size - instr.rtype.shamt);
+                    reg_file.set_unsigned(instr.rtype.rd, (ext * ((rt.u >> (reg_bit_size-1)) & 1)) | rt.u >> instr.rtype.shamt);                   
                     break;
                 }
                 case Func::e_srav: {
                     // Arithmetic right shift for signed values are implementation dependent, doing this to ensure portability
-                    if (rt.s < 0) {
-                        reg_file.set_signed(instr.rtype.rd, rt.s >> (rs.u & 0x1F) | ~(~0U >> (rs.u & 0x1F)));
-                    } else {
-                        reg_file.set_signed(instr.rtype.rd, rt.s >> (rs.u & 0x1F));
-                    }
+                    const auto shift_amount = rs.u & 0x1F;
+                    const auto reg_bit_size = (sizeof(typename RegisterFile::Unsigned)*8);
+                    const typename RegisterFile::Unsigned ext = (~0) << reg_bit_size - shift_amount;
+                    reg_file.set_unsigned(instr.rtype.rd, (ext * ((rt.u >> (reg_bit_size-1)) & 1)) | rt.u >> shift_amount);
                     break;
                 }
                 case Func::e_srl: {

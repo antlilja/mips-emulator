@@ -16,10 +16,7 @@ namespace mips_emulator {
             switch (instr.get_type()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
                 case Type::e_itype: return handle_itype_instr(instr, reg_file);
-                case Type::e_j_type: {
-                    // TODO: Handle J-Type instructions
-                    return false;
-                }
+                case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
                 case Type::e_fpu_rtype: {
                     // TODO: Handle FPU R-Type instructions
                     return false;
@@ -172,5 +169,35 @@ namespace mips_emulator {
 
             return true;
         }
+
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_jtype_instr(const Instruction instr, RegisterFile& reg_file) {
+
+            using JOp = Instruction::JTypeOpcode;
+            using Address = uint32_t;
+
+            const Address address = static_cast<Address>(instr.jtype.address);
+            const Address jta = (Address)(address << 2) | (Address)(reg_file.get_pc() & (0xf << 28));
+
+            const JOp op = static_cast<JOp>(instr.jtype.op);
+            
+            switch (op) {
+                case JOp::e_j: {
+                    reg_file.set_pc(jta);
+                    break;
+                }
+                case JOp::e_jal: {
+                    reg_file.set_unsigned(RegisterName::e_ra, reg_file.get_pc() + 4);
+                    reg_file.set_pc(jta);
+                    break;
+                }
+                
+                default: return false;
+            }
+
+            return true;
+        }
+
     }; // namespace Executor
 } // namespace mips_emulator

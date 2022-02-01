@@ -146,29 +146,29 @@ namespace mips_emulator {
         };
 
         PACKED(struct General {
-            uint32_t op : 6;
             uint32_t reserved : 26;
+            uint32_t op : 6;
         });
 
         PACKED(struct RType {
-            uint32_t zero : 6;
-            uint32_t rs : 5;
-            uint32_t rt : 5;
-            uint32_t rd : 5;
-            uint32_t shamt : 5;
             uint32_t func : 6;
+            uint32_t shamt : 5;
+            uint32_t rd : 5;
+            uint32_t rt : 5;
+            uint32_t rs : 5;
+            uint32_t zero : 6;
         });
 
         PACKED(struct IType {
-            uint32_t op : 6;
-            uint32_t rs : 5;
-            uint32_t rt : 5;
             uint32_t imm : 16;
+            uint32_t rt : 5;
+            uint32_t rs : 5;
+            uint32_t op : 6;
         });
 
         PACKED(struct JType {
-            uint32_t op : 6;
             uint32_t address : 26;
+            uint32_t op : 6;
         });
 
         // Coprocessor 1 structs
@@ -211,7 +211,6 @@ namespace mips_emulator {
                       "Instruction::IType bitfield is not 4 bytes in size");
         static_assert(sizeof(JType) == 4,
                       "Instruction::JType bitfield is not 4 bytes in size");
-
         static_assert(sizeof(FPURType) == 4,
                       "Instruction::FPURType bitfield is not 4 bytes in size");
         static_assert(sizeof(FPUBType) == 4,
@@ -219,7 +218,8 @@ namespace mips_emulator {
         static_assert(sizeof(FPUTType) == 4,
                       "Instruction::FPUTType bitfield is not 4 bytes in size");
 
-        // I-Type
+
+        // R-Type
         Instruction(const Func func, const RegisterName rd,
                     const RegisterName rs, const RegisterName rt,
                     const uint8_t shift_amount = 0) {
@@ -234,8 +234,8 @@ namespace mips_emulator {
         }
 
         // I-Type
-        Instruction(const ITypeOpcode opcode, const RegisterName rs,
-                    const RegisterName rt, const uint16_t immediate) {
+        Instruction(const ITypeOpcode opcode, const RegisterName rt,
+                    const RegisterName rs, const uint16_t immediate) {
             itype.op = static_cast<uint8_t>(opcode);
             itype.rt = static_cast<uint8_t>(rt);
             itype.rs = static_cast<uint8_t>(rs);

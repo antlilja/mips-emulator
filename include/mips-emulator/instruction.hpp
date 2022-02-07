@@ -27,6 +27,9 @@ namespace mips_emulator {
             e_rtype,
             e_itype,
             e_j_type,
+            e_fpu_rtype,
+            e_fpu_btype,
+            e_fpu_ttype,
         };
 
         enum class Func : uint8_t {
@@ -52,6 +55,43 @@ namespace mips_emulator {
             e_srlv = 6,
         };
 
+        // Enum for FPUR-type instructions
+        enum class FPUFunc : uint8_t {
+            e_abs = 0b000101,
+            e_add = 0b000000,
+            e_ceil_l = 0b001010,
+            e_ceil_w = 0b001110,
+            e_class = 0b011011,
+            e_cvt_d = 0b100001,
+            e_cvt_l = 0b100101,
+            e_cvt_s = 0b100000,
+            e_cvt_w = 0b100100,
+            e_div = 0b000011,
+            e_floor_l = 0b001011,
+            e_floor_w = 0b001111,
+            e_maddf = 0b011000,
+            e_msubf = 0b011001,
+            e_max = 0b011110,
+            e_maxa = 0b011111,
+            e_min = 0b011100,
+            e_mina = 0b011101,
+            e_mov = 0b000110,
+            e_mul = 0b000010,
+            e_neg = 0b000111,
+            e_recip = 0b010101,
+            e_rint = 0b011010,
+            e_round_l = 0b001000,
+            e_round_w = 0b001100,
+            e_rsqrt = 0b010110,
+            e_sel = 0b010000,
+            e_seleqz = 0b010100,
+            e_selnqz = 0b010111,
+            e_sqrt = 0b000100,
+            e_sub = 0b000001,
+            e_trunc_l = 0b001001,
+            e_trunc_w = 0b001101,
+        };
+
         enum class ITypeOpcode : uint8_t {
             e_beq = 4,
             e_bne = 5,
@@ -73,6 +113,37 @@ namespace mips_emulator {
         enum class JTypeOpcode : uint8_t {
             e_j = 2,
             e_jal = 3,
+        };
+
+        // Opcode for coprocessor instruction
+        enum class COPOpcode : uint8_t {
+            e_cop0 = 0b010000,
+            e_cop1 = 0b010001,
+            e_cop2 = 0b010010,
+        };
+
+        enum class FPUTTypeOp {
+            e_mf = 0,
+            e_cf = 2,
+            e_mfh = 3,
+            e_mt = 4,
+            e_ct = 6,
+            e_mth = 7,
+        };
+
+        enum class FPUBTypeOp {
+            e_bc1eqz = 9,  // Branch if bit 0 = 0
+            e_bc1nez = 13, // Branch if bit 0 != 0
+        };
+
+        // Floating Point Format field
+        enum class FPURTypeOp : uint8_t {
+            e_fmt_s = 16,  // Use Single
+            e_fmt_d = 17,  // Use Double
+            e_fmt_w = 20,  // Use 32 bit
+            e_fmt_l = 21,  // Use 64 bit
+            e_cmp_condn_s = 24,
+            e_cmp_condn_d = 25,
         };
 
         PACKED(struct General {
@@ -101,6 +172,37 @@ namespace mips_emulator {
             uint32_t op : 6;
         });
 
+        // Coprocessor 1 structs
+        // These are made up names, as I (Emil) couldn't find any specified
+        // type names in the mip32 specifications. 
+        // FPURType is called so because it's similar to R type instructions
+        // FPUBType is called so because it does branching.
+        // FPUTType is called so because it (T)ransfers to and from the FPU
+
+        PACKED(struct FPURType {
+            uint32_t func : 6;
+            uint32_t fd : 5;
+            uint32_t fs : 5;
+            uint32_t ft : 5;
+            uint32_t fmt : 5;
+            uint32_t cop1 : 6;           
+        });
+
+        PACKED(struct FPUBType {
+            uint32_t offset : 16;
+            uint32_t ft : 5;
+            uint32_t bc : 5;
+            uint32_t cop1 : 6;
+        });
+
+        PACKED(struct FPUTType {
+            uint32_t zero : 11;
+            uint32_t fs : 5;
+            uint32_t rt : 5;
+            uint32_t op : 5;
+            uint32_t cop1 : 6;
+        });
+
         // Make sure internal structs are the same size
         static_assert(sizeof(General) == 4,
                       "Instruction::General bitfield is not 4 bytes in size");
@@ -110,6 +212,13 @@ namespace mips_emulator {
                       "Instruction::IType bitfield is not 4 bytes in size");
         static_assert(sizeof(JType) == 4,
                       "Instruction::JType bitfield is not 4 bytes in size");
+        static_assert(sizeof(FPURType) == 4,
+                      "Instruction::FPURType bitfield is not 4 bytes in size");
+        static_assert(sizeof(FPUBType) == 4,
+                      "Instruction::FPUIType bitfield is not 4 bytes in size");
+        static_assert(sizeof(FPUTType) == 4,
+                      "Instruction::FPUTType bitfield is not 4 bytes in size");
+
 
         // R-Type
         Instruction(const Func func, const RegisterName rd,
@@ -142,7 +251,45 @@ namespace mips_emulator {
             jtype.address = address & MASK;
         }
 
+        // No need for FPU register naming since it's just $f[number] 
+        
+        // FPU R-Type
+        Instruction(const FPURTypeOp op, const uint8_t ft, const uint8_t fs, const uint8_t fd, const FPUFunc func) {
+            fpu_rtype.cop1 = static_cast<uint8_t>(COPOpcode::e_cop1);
+            fpu_rtype.fmt = static_cast<uint8_t>(op);
+            fpu_rtype.ft = ft & 31;
+            fpu_rtype.fs = fs & 31;
+            fpu_rtype.fd = fd & 31;
+            fpu_rtype.func = static_cast<uint8_t>(func);
+        }
+
+        // FPU B-Type
+        Instruction(const FPUBTypeOp op, const uint8_t ft, uint16_t offset) {
+            fpu_btype.cop1 = static_cast<uint8_t>(COPOpcode::e_cop1);
+            fpu_btype.bc = static_cast<uint8_t>(op);
+            fpu_btype.ft = ft & 31;
+            fpu_btype.offset = offset;
+        }
+
+        // FPU T-Type
+        Instruction(const FPUTTypeOp op, const RegisterName rt, const uint8_t fs) {
+            fpu_ttype.cop1 = static_cast<uint8_t>(COPOpcode::e_cop1);
+            fpu_ttype.op = static_cast<uint8_t>(op);
+            fpu_ttype.rt = static_cast<uint8_t>(rt);
+            fpu_ttype.fs = fs & 31;
+            fpu_ttype.zero = 0;
+        }
+
+
         inline Type get_type() const {
+            if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {
+                if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
+
+                if (fpu_rtype.fmt & 0b01000) return Type::e_fpu_btype;
+
+                return Type::e_fpu_ttype;
+            }
+
             switch (general.op & ~1) {
                 case 0: return Type::e_rtype;
                 case 2: return Type::e_itype;
@@ -156,6 +303,10 @@ namespace mips_emulator {
         RType rtype;
         IType itype;
         JType jtype;
+
+        FPURType fpu_rtype;
+        FPUTType fpu_ttype;
+        FPUBType fpu_btype;
     };
 
     // Make sure Instruction union matches the MIPS instruction size

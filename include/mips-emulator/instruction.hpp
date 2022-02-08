@@ -50,6 +50,7 @@ namespace mips_emulator {
             e_sll = 0,
             e_sllv = 4,
             e_sra = 3,
+            e_srav = 7,
             e_srl = 2,
             e_srlv = 6,
         };

@@ -94,7 +94,39 @@ namespace mips_emulator {
                     reg_file.set_pc(rs.u);
                     break;
                 }
-                    // TODO: Handle shift instructions
+                case Func::e_sll: {
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u << instr.rtype.shamt);
+                    break;
+                }
+                case Func::e_sllv: {
+                    // rt is shifted left by the number specified by the lower 5 bits of rs and then stored in rd
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u << (rs.u & 0x1F));
+                    break;
+                }
+                case Func::e_sra: {
+                    // Arithmetic right shift for signed values are implementation dependent, doing this to ensure portability
+                    const auto reg_bit_size = (sizeof(typename RegisterFile::Unsigned)*8);
+                    const typename RegisterFile::Unsigned ext = (~0) << (reg_bit_size - instr.rtype.shamt);
+                    reg_file.set_unsigned(instr.rtype.rd, (ext * ((rt.u >> (reg_bit_size-1)) & 1)) | rt.u >> instr.rtype.shamt);                   
+                    break;
+                }
+                case Func::e_srav: {
+                    // Arithmetic right shift for signed values are implementation dependent, doing this to ensure portability
+                    const auto shift_amount = rs.u & 0x1F;
+                    const auto reg_bit_size = (sizeof(typename RegisterFile::Unsigned)*8);
+                    const typename RegisterFile::Unsigned ext = (~0) << reg_bit_size - shift_amount;
+                    reg_file.set_unsigned(instr.rtype.rd, (ext * ((rt.u >> (reg_bit_size-1)) & 1)) | rt.u >> shift_amount);
+                    break;
+                }
+                case Func::e_srl: {
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u >> instr.rtype.shamt);
+                    break;
+                }
+                case Func::e_srlv: {
+                    // rt is shifted right by the number specified by the lower 5 bits of rs, inserting 0's, and then stored in rd
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u >> (rs.u & 0x1F));
+                    break;
+                }
                 default: return false;
             }
 

@@ -6,15 +6,13 @@
 
 using namespace mips_emulator;
 
-TEMPLATE_TEST_CASE("Default initialization is zero initalized",
-                   "[RegisterFile]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("Default initialization is zero initalized", "[RegisterFile]", RegisterFile32) {
     TestType state;
     for (int i = 0; i < TestType::REGISTER_COUNT; ++i)
         REQUIRE(state.get(i).u == 0);
 }
 
-TEMPLATE_TEST_CASE("Set register unsigned", "[RegisterFile]", RegisterFile32,
-                   RegisterFile64) {
+TEMPLATE_TEST_CASE("Set register unsigned", "[RegisterFile]", RegisterFile32) {
     SECTION("to 1") {
         TestType reg_file;
         for (int i = 1; i < TestType::REGISTER_COUNT; ++i) {
@@ -35,8 +33,7 @@ TEMPLATE_TEST_CASE("Set register unsigned", "[RegisterFile]", RegisterFile32,
     }
 }
 
-TEMPLATE_TEST_CASE("Set register signed", "[RegisterFile]", RegisterFile32,
-                   RegisterFile64) {
+TEMPLATE_TEST_CASE("Set register signed", "[RegisterFile]", RegisterFile32) {
     SECTION("to 1") {
         TestType reg_file;
         for (int i = 1; i < TestType::REGISTER_COUNT; ++i) {
@@ -78,7 +75,7 @@ TEMPLATE_TEST_CASE("Set register signed", "[RegisterFile]", RegisterFile32,
 }
 
 TEMPLATE_TEST_CASE("Register $0 is always zero", "[RegisterFile]",
-                   RegisterFile32, RegisterFile64) {
+                   RegisterFile32) {
     constexpr typename TestType::Unsigned U_MAX =
         std::numeric_limits<typename TestType::Unsigned>::max();
 

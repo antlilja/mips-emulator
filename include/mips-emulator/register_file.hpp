@@ -4,11 +4,10 @@
 #include <cstdint>
 
 namespace mips_emulator {
-    template <typename TUnsigned, typename TSigned>
     class RegisterFile {
     public:
-        using Unsigned = TUnsigned;
-        using Signed = TSigned;
+        using Unsigned = uint32_t;
+        using Signed = int32_t;
 
         union Register {
             Unsigned u;
@@ -29,7 +28,7 @@ namespace mips_emulator {
 
         Unsigned get_pc() const noexcept { return pc; }
         void set_pc(Unsigned new_pc) noexcept { pc = new_pc; }
-        void inc_pc() noexcept { return pc += 4; }
+        void inc_pc() noexcept { pc += 4; }
 
         Register get(const RegisterName reg) const noexcept {
             return get(static_cast<uint8_t>(reg));
@@ -75,6 +74,5 @@ namespace mips_emulator {
         Register regs[REGISTER_COUNT] = {};
     };
 
-    using RegisterFile32 = RegisterFile<uint32_t, int32_t>;
-    using RegisterFile64 = RegisterFile<uint64_t, int64_t>;
+    using RegisterFile32 = RegisterFile;
 } // namespace mips_emulator

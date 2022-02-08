@@ -10,7 +10,7 @@ using namespace mips_emulator;
 using Func = Instruction::Func;
 using IOp = Instruction::ITypeOpcode;
 
-TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32) {
     SECTION("Positive numbers") {
         using Address = typename TestType::Unsigned;
         TestType reg_file;
@@ -28,7 +28,7 @@ TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32) {
     SECTION("Positive numbers") {
         using Address = typename TestType::Unsigned;
         TestType reg_file;
@@ -63,7 +63,7 @@ TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32) {
     SECTION("Positive numbers") {
         using Address = typename TestType::Unsigned;
         TestType reg_file;
@@ -81,7 +81,7 @@ TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("beq", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("beq", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;
@@ -98,7 +98,7 @@ TEMPLATE_TEST_CASE("beq", "[Executor]", RegisterFile32, RegisterFile64) {
 	}
 }
 
-TEMPLATE_TEST_CASE("bne", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("bne", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;
@@ -116,7 +116,7 @@ TEMPLATE_TEST_CASE("bne", "[Executor]", RegisterFile32, RegisterFile64) {
 	}
 }
 
-TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32) {
     SECTION("Positive numbers") {
         using Address = typename TestType::Unsigned;
         TestType reg_file;
@@ -133,7 +133,7 @@ TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32) {
     SECTION("Positive numbers") {
         using Address = typename TestType::Unsigned;
         TestType reg_file;
@@ -149,7 +149,7 @@ TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sltiu", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("sltiu", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;
@@ -165,7 +165,7 @@ TEMPLATE_TEST_CASE("sltiu", "[Executor]", RegisterFile32, RegisterFile64) {
 	}
 }
 
-TEMPLATE_TEST_CASE("andi", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("andi", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;
@@ -181,7 +181,7 @@ TEMPLATE_TEST_CASE("andi", "[Executor]", RegisterFile32, RegisterFile64) {
 	}
 }
 
-TEMPLATE_TEST_CASE("ori", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("ori", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;
@@ -197,7 +197,7 @@ TEMPLATE_TEST_CASE("ori", "[Executor]", RegisterFile32, RegisterFile64) {
 	}
 }
 
-TEMPLATE_TEST_CASE("xori", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("xori", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;
@@ -213,7 +213,7 @@ TEMPLATE_TEST_CASE("xori", "[Executor]", RegisterFile32, RegisterFile64) {
 	}
 }
 
-TEMPLATE_TEST_CASE("lui", "[Executor]", RegisterFile32, RegisterFile64) {
+TEMPLATE_TEST_CASE("lui", "[Executor]", RegisterFile32) {
 	SECTION("Positive numbers") {
 		using Address = typename TestType::Unsigned;
 		TestType reg_file;

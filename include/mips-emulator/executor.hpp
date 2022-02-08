@@ -114,6 +114,14 @@ namespace mips_emulator {
                     reg_file.set_pc(rs.u);
                     break;
                 }
+                case Func::e_slt: {
+                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s );
+                    break;
+                }
+                case Func::e_sltu: {
+                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s );
+                    break;
+                }
                 case Func::e_jalr: {
                     reg_file.set_unsigned(31, reg_file.get_pc());
                     reg_file.set_pc(rs.u);

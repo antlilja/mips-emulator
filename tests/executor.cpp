@@ -83,38 +83,38 @@ TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
 }
 
 TEMPLATE_TEST_CASE("beq", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		reg_file.set_unsigned(RegisterName::e_t0, 7);
-		reg_file.set_unsigned(RegisterName::e_t1, 7);
-		Instruction instr(IOp::e_beq, RegisterName::e_t0, RegisterName::e_t1, 16);
+        reg_file.set_unsigned(RegisterName::e_t0, 7);
+        reg_file.set_unsigned(RegisterName::e_t1, 7);
+        Instruction instr(IOp::e_beq, RegisterName::e_t0, RegisterName::e_t1,
+                          16);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get_pc() == 68);
-
-	}
+        REQUIRE(reg_file.get_pc() == 68);
+    }
 }
 
 TEMPLATE_TEST_CASE("bne", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		reg_file.set_unsigned(RegisterName::e_t0, 7);
-		reg_file.set_unsigned(RegisterName::e_t1, 7);
+        reg_file.set_unsigned(RegisterName::e_t0, 7);
+        reg_file.set_unsigned(RegisterName::e_t1, 7);
 
-		Instruction instr(IOp::e_bne, RegisterName::e_t0, RegisterName::e_t1, 16);
+        Instruction instr(IOp::e_bne, RegisterName::e_t0, RegisterName::e_t1,
+                          16);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get_pc() == 0);
-
-	}
+        REQUIRE(reg_file.get_pc() == 0);
+    }
 }
 
 TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
@@ -141,7 +141,8 @@ TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32, RegisterFile64) {
 
         reg_file.set_signed(RegisterName::e_t0, -5);
 
-        Instruction instr(IOp::e_slti, RegisterName::e_t1, RegisterName::e_t0, 2);
+        Instruction instr(IOp::e_slti, RegisterName::e_t1, RegisterName::e_t0,
+                          2);
 
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -151,111 +152,115 @@ TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32, RegisterFile64) {
 }
 
 TEMPLATE_TEST_CASE("sltiu", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		reg_file.set_unsigned(RegisterName::e_t0, -5);
+        reg_file.set_unsigned(RegisterName::e_t0, -5);
 
-		Instruction instr(IOp::e_sltiu, RegisterName::e_t1, RegisterName::e_t0, 2);
+        Instruction instr(IOp::e_sltiu, RegisterName::e_t1, RegisterName::e_t0,
+                          2);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get(RegisterName::e_t1).u == 0);
-	}
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0);
+    }
 }
 
 TEMPLATE_TEST_CASE("andi", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
 
-		Instruction instr(IOp::e_andi, RegisterName::e_t1, RegisterName::e_t0, 0b1010);
+        Instruction instr(IOp::e_andi, RegisterName::e_t1, RegisterName::e_t0,
+                          0b1010);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b1000);
-	}
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b1000);
+    }
 }
 
 TEMPLATE_TEST_CASE("ori", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
 
-		Instruction instr(IOp::e_ori, RegisterName::e_t1, RegisterName::e_t0, 0b1010);
+        Instruction instr(IOp::e_ori, RegisterName::e_t1, RegisterName::e_t0,
+                          0b1010);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b1110);
-	}
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b1110);
+    }
 }
 
 TEMPLATE_TEST_CASE("xori", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
 
-		Instruction instr(IOp::e_xori, RegisterName::e_t1, RegisterName::e_t0, 0b1010);
+        Instruction instr(IOp::e_xori, RegisterName::e_t1, RegisterName::e_t0,
+                          0b1010);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b0110);
-	}
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b0110);
+    }
 }
 
 TEMPLATE_TEST_CASE("lui", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Address = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Address = typename TestType::Unsigned;
+        TestType reg_file;
 
-		Instruction instr(IOp::e_lui, RegisterName::e_t1, RegisterName::e_0, 0xbeef);
+        Instruction instr(IOp::e_lui, RegisterName::e_t1, RegisterName::e_0,
+                          0xbeef);
 
-		const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xbeef0000);
-	}
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xbeef0000);
+    }
 }
 
 TEMPLATE_TEST_CASE("j", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Unsigned = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Unsigned = typename TestType::Unsigned;
+        TestType reg_file;
         reg_file.set_pc(0x10beef00);
 
-		Instruction instr(JOp::e_j, 0x003fc);
+        Instruction instr(JOp::e_j, 0x003fc);
 
-		const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get_pc() == 0x10000ff0);
-
-	}
+        REQUIRE(reg_file.get_pc() == 0x10000ff0);
+    }
 }
 
 TEMPLATE_TEST_CASE("jal", "[Executor]", RegisterFile32, RegisterFile64) {
-	SECTION("Positive numbers") {
-		using Unsigned = typename TestType::Unsigned;
-		TestType reg_file;
+    SECTION("Positive numbers") {
+        using Unsigned = typename TestType::Unsigned;
+        TestType reg_file;
         reg_file.set_pc(0x10beef00);
 
-		Instruction instr(JOp::e_jal, 0x003fc);
+        Instruction instr(JOp::e_jal, 0x003fc);
 
-		const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
-		REQUIRE(no_error);
+        const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
+        REQUIRE(no_error);
 
-		REQUIRE(reg_file.get_pc() == 0x10000ff0);
+        REQUIRE(reg_file.get_pc() == 0x10000ff0);
         REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x10beef04);
-	}
+    }
 }

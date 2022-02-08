@@ -111,56 +111,73 @@ namespace mips_emulator {
             const Register rs = reg_file.get(instr.rtype.rs);
             const Register rt = reg_file.get(instr.rtype.rt);
 
-            const auto sign_ext_imm = [](const typename RegisterFile::Unsigned imm) {
-                const typename RegisterFile::Unsigned ext = ( ~((typename RegisterFile::Unsigned) 0)) << 16;
-                return ((ext * ((imm >> 15) & 1)) | imm);
-            };
+            const auto sign_ext_imm =
+                [](const typename RegisterFile::Unsigned imm) {
+                    const typename RegisterFile::Unsigned ext =
+                        (~((typename RegisterFile::Unsigned)0)) << 16;
+                    return ((ext * ((imm >> 15) & 1)) | imm);
+                };
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.set_pc( reg_file.get_pc() + (sign_ext_imm(instr.itype.imm) * 4) + 4);
+                        reg_file.set_pc(reg_file.get_pc() +
+                                        (sign_ext_imm(instr.itype.imm) * 4) +
+                                        4);
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
-                        reg_file.set_pc( reg_file.get_pc() + (sign_ext_imm(instr.itype.imm) * 4) + 4);
+                        reg_file.set_pc(reg_file.get_pc() +
+                                        (sign_ext_imm(instr.itype.imm) * 4) +
+                                        4);
                     }
                     break;
                 }
                 case IOp::e_addi: {
-                    reg_file.set_signed(instr.itype.rt, rs.s + sign_ext_imm(instr.itype.imm));
+                    reg_file.set_signed(instr.itype.rt,
+                                        rs.s + sign_ext_imm(instr.itype.imm));
                     break;
                 }
                 case IOp::e_addiu: {
-                    reg_file.set_unsigned(instr.itype.rt, rs.u + sign_ext_imm(instr.itype.imm));
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u + sign_ext_imm(instr.itype.imm));
                     break;
                 }
                 case IOp::e_slti: {
-                    reg_file.set_unsigned(instr.itype.rt, rs.s < (typename RegisterFile::Signed) sign_ext_imm(instr.itype.imm));
+                    reg_file.set_unsigned(
+                        instr.itype.rt,
+                        rs.s < (typename RegisterFile::Signed)sign_ext_imm(
+                                   instr.itype.imm));
                     break;
                 }
                 case IOp::e_sltiu: {
-                    reg_file.set_unsigned(instr.itype.rt, rs.u < sign_ext_imm(instr.itype.imm));
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u < sign_ext_imm(instr.itype.imm));
                     break;
                 }
                 case IOp::e_andi: {
-                    reg_file.set_unsigned(instr.itype.rt, rs.u & instr.itype.imm);
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u & instr.itype.imm);
                     break;
                 }
                 case IOp::e_ori: {
-                    reg_file.set_unsigned(instr.itype.rt, rs.u | instr.itype.imm);
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u | instr.itype.imm);
                     break;
                 }
                 case IOp::e_xori: {
-                    reg_file.set_unsigned(instr.itype.rt, rs.u ^ instr.itype.imm);
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u ^ instr.itype.imm);
                     break;
                 }
                 case IOp::e_lui: {
-                    reg_file.set_unsigned(instr.itype.rt, (typename RegisterFile::Unsigned) instr.itype.imm << 16);
+                    reg_file.set_unsigned(
+                        instr.itype.rt,
+                        (typename RegisterFile::Unsigned)instr.itype.imm << 16);
                     break;
                 }
 
@@ -178,21 +195,23 @@ namespace mips_emulator {
             using Address = uint32_t;
 
             const Address address = static_cast<Address>(instr.jtype.address);
-            const Address jta = (Address)(address << 2) | (Address)(reg_file.get_pc() & (0xf << 28));
+            const Address jta = (Address)(address << 2) |
+                                (Address)(reg_file.get_pc() & (0xf << 28));
 
             const JOp op = static_cast<JOp>(instr.jtype.op);
-            
+
             switch (op) {
                 case JOp::e_j: {
                     reg_file.set_pc(jta);
                     break;
                 }
                 case JOp::e_jal: {
-                    reg_file.set_unsigned(RegisterName::e_ra, reg_file.get_pc() + 4);
+                    reg_file.set_unsigned(RegisterName::e_ra,
+                                          reg_file.get_pc() + 4);
                     reg_file.set_pc(jta);
                     break;
                 }
-                
+
                 default: return false;
             }
 

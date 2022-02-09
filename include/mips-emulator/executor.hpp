@@ -97,7 +97,7 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_sltu: {
-                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s );
+                    reg_file.set_unsigned(instr.rtype.rd, rs.u < rt.u );
                     break;
                 }
                 case Func::e_jalr: {

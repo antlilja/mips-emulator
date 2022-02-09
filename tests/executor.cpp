@@ -537,3 +537,67 @@ TEST_CASE("sop31", "[Executor]") {
         }
     }
 }
+
+TEST_CASE("slt", "[Executor]") {
+    SECTION("Equal numbers") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, 5);
+        reg_file.set_signed(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
+    }
+
+    SECTION("Lesser number") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, 2);
+        reg_file.set_signed(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
+    }
+}
+
+TEST_CASE("sltu", "[Executor]") {
+    SECTION("Equal numbers") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 5);
+        reg_file.set_unsigned(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
+    }
+
+    SECTION("Lesser number") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 2);
+        reg_file.set_unsigned(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
+    }
+}

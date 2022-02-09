@@ -11,10 +11,10 @@ using Func = Instruction::Func;
 using IOp = Instruction::ITypeOpcode;
 using JOp = Instruction::JTypeOpcode;
 
-TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("add", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_signed(RegisterName::e_t0, 1);
         reg_file.set_signed(RegisterName::e_t1, 5);
@@ -29,10 +29,10 @@ TEMPLATE_TEST_CASE("add", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("sub", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_signed(RegisterName::e_t0, 10);
         reg_file.set_signed(RegisterName::e_t1, 1);
@@ -47,8 +47,8 @@ TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 
     SECTION("Negative numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
         Address pc = 0;
 
         reg_file.set_signed(RegisterName::e_t0, -3);
@@ -64,10 +64,10 @@ TEMPLATE_TEST_CASE("sub", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("or", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 0b1);   // 1
         reg_file.set_unsigned(RegisterName::e_t1, 0b110); // 6
@@ -82,10 +82,10 @@ TEMPLATE_TEST_CASE("or", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("beq", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("beq", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 7);
         reg_file.set_unsigned(RegisterName::e_t1, 7);
@@ -99,10 +99,10 @@ TEMPLATE_TEST_CASE("beq", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("bne", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("bne", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 7);
         reg_file.set_unsigned(RegisterName::e_t1, 7);
@@ -117,10 +117,10 @@ TEMPLATE_TEST_CASE("bne", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("addi", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 100202);
 
@@ -134,10 +134,10 @@ TEMPLATE_TEST_CASE("addi", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sll", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("sll", "[Executor]") {
     SECTION("Shift number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
 
@@ -150,10 +150,10 @@ TEMPLATE_TEST_CASE("sll", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sllv", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("sllv", "[Executor]") {
     SECTION("Shift number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
@@ -167,8 +167,8 @@ TEMPLATE_TEST_CASE("sllv", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 
     SECTION("Correct bits used") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 1);
         reg_file.set_unsigned(RegisterName::e_t2, 0xFFFFFFE1);
@@ -182,10 +182,10 @@ TEMPLATE_TEST_CASE("sllv", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sra", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("sra", "[Executor]") {
     SECTION("Shift positive number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
 
@@ -198,8 +198,8 @@ TEMPLATE_TEST_CASE("sra", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 
     SECTION("Shift negative number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, -123456);
 
@@ -212,10 +212,10 @@ TEMPLATE_TEST_CASE("sra", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("srav", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("srav", "[Executor]") {
     SECTION("Shift positive number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
@@ -229,8 +229,8 @@ TEMPLATE_TEST_CASE("srav", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 
     SECTION("Shift negative number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, -123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
@@ -244,8 +244,8 @@ TEMPLATE_TEST_CASE("srav", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 
     SECTION("Correct bits used") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 2);
         reg_file.set_unsigned(RegisterName::e_t2, 0xFFFFFFE1);
@@ -259,10 +259,10 @@ TEMPLATE_TEST_CASE("srav", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("srl", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("srl", "[Executor]") {
     SECTION("Shift number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
 
@@ -275,10 +275,10 @@ TEMPLATE_TEST_CASE("srl", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("srlv", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("srlv", "[Executor]") {
     SECTION("Shift number") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
@@ -292,8 +292,8 @@ TEMPLATE_TEST_CASE("srlv", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 
     SECTION("Correct bits used") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t1, 2);
         reg_file.set_unsigned(RegisterName::e_t2, 0xFFFFFFE1);
@@ -307,10 +307,10 @@ TEMPLATE_TEST_CASE("srlv", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("slti", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_signed(RegisterName::e_t0, -5);
 
@@ -324,10 +324,10 @@ TEMPLATE_TEST_CASE("slti", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("sltiu", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("sltiu", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, -5);
 
@@ -341,10 +341,10 @@ TEMPLATE_TEST_CASE("sltiu", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("andi", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("andi", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
 
@@ -358,10 +358,10 @@ TEMPLATE_TEST_CASE("andi", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("ori", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("ori", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
 
@@ -375,10 +375,10 @@ TEMPLATE_TEST_CASE("ori", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("xori", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("xori", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         reg_file.set_unsigned(RegisterName::e_t0, 0b1100);
 
@@ -392,10 +392,10 @@ TEMPLATE_TEST_CASE("xori", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("lui", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("lui", "[Executor]") {
     SECTION("Positive numbers") {
-        using Address = typename TestType::Unsigned;
-        TestType reg_file;
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
 
         Instruction instr(IOp::e_lui, RegisterName::e_t1, RegisterName::e_0,
                           0xbeef);
@@ -407,10 +407,10 @@ TEMPLATE_TEST_CASE("lui", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("j", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("j", "[Executor]") {
     SECTION("Positive numbers") {
-        using Unsigned = typename TestType::Unsigned;
-        TestType reg_file;
+        using Unsigned = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
         reg_file.set_pc(0x10beef00);
 
         Instruction instr(JOp::e_j, 0x003fc);
@@ -422,10 +422,10 @@ TEMPLATE_TEST_CASE("j", "[Executor]", RegisterFile32, RegisterFile64) {
     }
 }
 
-TEMPLATE_TEST_CASE("jal", "[Executor]", RegisterFile32, RegisterFile64) {
+TEST_CASE("jal", "[Executor]") {
     SECTION("Positive numbers") {
-        using Unsigned = typename TestType::Unsigned;
-        TestType reg_file;
+        using Unsigned = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
         reg_file.set_pc(0x10beef00);
 
         Instruction instr(JOp::e_jal, 0x003fc);

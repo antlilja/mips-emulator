@@ -25,37 +25,43 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
     }
 
     SECTION("sll") {
-        const Instruction instr(Func::e_sll, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_sll, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         REQUIRE(instr.raw == 0x00094100);
     }
 
     SECTION("sllv") {
-        const Instruction instr(Func::e_sllv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_sllv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         REQUIRE(instr.raw == 0x01494004);
     }
 
     SECTION("sra") {
-        const Instruction instr(Func::e_sra, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_sra, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         REQUIRE(instr.raw == 0x00094103);
     }
 
     SECTION("srav") {
-        const Instruction instr(Func::e_srav, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srav, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         REQUIRE(instr.raw == 0x01494007);
     }
 
     SECTION("srl") {
-        const Instruction instr(Func::e_srl, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_srl, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         REQUIRE(instr.raw == 0x00094102);
     }
 
     SECTION("srlv") {
-        const Instruction instr(Func::e_srlv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srlv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         REQUIRE(instr.raw == 0x01494006);
     }
@@ -84,8 +90,9 @@ TEST_CASE("FPU R Type", "[Instruction]") {
     using Func = Instruction::FPUFunc;
 
     SECTION("get_type") {
-        R instr[] = {R::e_fmt_s, R::e_fmt_d, R::e_fmt_w, R::e_fmt_l, R::e_cmp_condn_s, R::e_cmp_condn_d};
-        for(auto const v: instr) {
+        R instr[] = {R::e_fmt_s, R::e_fmt_d,       R::e_fmt_w,
+                     R::e_fmt_l, R::e_cmp_condn_s, R::e_cmp_condn_d};
+        for (auto const v : instr) {
             const auto inst = Instruction(v, 0, 2, 3, Func::e_floor_l);
             REQUIRE(inst.get_type() == Type::e_fpu_rtype);
         }
@@ -100,7 +107,7 @@ TEST_CASE("FPU R Type", "[Instruction]") {
         Instruction r(R::e_fmt_s, 0, 26, 24, Func::e_abs);
         REQUIRE(r.raw == 0x4600d605U);
     }
-    
+
     SECTION("add.d $f2, $f1, $f20") {
         Instruction r(R::e_fmt_d, 20, 1, 2, Func::e_add);
         REQUIRE(r.raw == 0x46340880);
@@ -113,7 +120,7 @@ TEST_CASE("FPU T Type", "[Instruction]") {
 
     SECTION("get_type") {
         T instr[] = {T::e_cf, T::e_ct, T::e_mf, T::e_mfh, T::e_mt, T::e_mth};
-        for(auto const v: instr) {
+        for (auto const v : instr) {
             const auto inst = Instruction(v, RegisterName::e_k0, 0);
             REQUIRE(inst.get_type() == Type::e_fpu_ttype);
         }
@@ -136,9 +143,30 @@ TEST_CASE("FPU B Type", "[Instruction]") {
 
     SECTION("get_type") {
         B instr[] = {B::e_bc1eqz, B::e_bc1nez};
-        for(auto const v: instr) {
+        for (auto const v : instr) {
             const auto inst = Instruction(v, 31, 25);
             REQUIRE(inst.get_type() == Type::e_fpu_btype);
         }
+    }
+}
+
+TEST_CASE("Special3 R Type", "[Instruction]") {
+    using Type = Instruction::Type;
+    using R = Instruction::Special3Func;
+    using ROp = Instruction::Special3RTypeOp;
+
+    SECTION("get_type") {
+        ROp instr[] = {ROp::e_wsbh};
+        for (auto const v : instr) {
+            const auto inst = Instruction(R::e_bshfl, v, RegisterName::e_t0,
+                                          RegisterName::e_t1);
+            REQUIRE(inst.get_type() == Type::e_special3_rtype);
+        }
+    }
+
+    SECTION("wsbh $t0 $t1") {
+        Instruction t(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                      RegisterName::e_t1);
+        REQUIRE(t.raw == 0x7c0940a0);
     }
 }

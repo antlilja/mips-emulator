@@ -29,6 +29,8 @@ namespace mips_emulator {
                     // TODO: Handle FPU Brach instructions
                     return false;
                 }
+                case Type::e_special3_rtype:
+                    return handle_special3_rtype_instr(instr, reg_file);
             }
         }
 
@@ -261,6 +263,34 @@ namespace mips_emulator {
                     reg_file.set_unsigned(RegisterName::e_ra,
                                           reg_file.get_pc() + 4);
                     reg_file.set_pc(jta);
+                    break;
+                }
+
+                default: return false;
+            }
+
+            return true;
+        }
+
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_special3_rtype_instr(const Instruction instr,
+                                    RegisterFile& reg_file) {
+            using Register = typename RegisterFile::Register;
+            using ROp = Instruction::Special3RTypeOp;
+
+            const Register rt = reg_file.get(instr.special3_rtype.rt);
+            const Register rd = reg_file.get(instr.special3_rtype.rd);
+
+            const ROp op = static_cast<ROp>(instr.special3_rtype.op);
+            switch (op) {
+                case ROp::e_wsbh: {
+                    // Word Swap Bytes Within Halfwords
+                    reg_file.set_unsigned(instr.special3_rtype.rd,
+                                          ((rt.u & 0xFF) << 8) |
+                                              ((rt.u & 0xFF00) >> 8) |
+                                              ((rt.u & 0xFF0000) << 8) |
+                                              ((rt.u & 0xFF000000) >> 8));
                     break;
                 }
 

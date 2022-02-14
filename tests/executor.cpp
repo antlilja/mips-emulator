@@ -141,7 +141,8 @@ TEST_CASE("sll", "[Executor]") {
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
 
-        const Instruction instr(Func::e_sll, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_sll, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -158,7 +159,8 @@ TEST_CASE("sllv", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
 
-        const Instruction instr(Func::e_sllv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_sllv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -173,7 +175,8 @@ TEST_CASE("sllv", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 1);
         reg_file.set_unsigned(RegisterName::e_t2, 0xFFFFFFE1);
 
-        const Instruction instr(Func::e_sllv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_sllv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -189,7 +192,8 @@ TEST_CASE("sra", "[Executor]") {
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
 
-        const Instruction instr(Func::e_sra, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_sra, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -203,7 +207,8 @@ TEST_CASE("sra", "[Executor]") {
 
         reg_file.set_unsigned(RegisterName::e_t1, -123456);
 
-        const Instruction instr(Func::e_sra, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_sra, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -220,7 +225,8 @@ TEST_CASE("srav", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
 
-        const Instruction instr(Func::e_srav, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srav, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -235,7 +241,8 @@ TEST_CASE("srav", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, -123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
 
-        const Instruction instr(Func::e_srav, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srav, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -250,7 +257,8 @@ TEST_CASE("srav", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 2);
         reg_file.set_unsigned(RegisterName::e_t2, 0xFFFFFFE1);
 
-        const Instruction instr(Func::e_srav, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srav, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -266,7 +274,8 @@ TEST_CASE("srl", "[Executor]") {
 
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
 
-        const Instruction instr(Func::e_srl, RegisterName::e_t0, RegisterName::e_0, RegisterName::e_t1, 4);
+        const Instruction instr(Func::e_srl, RegisterName::e_t0,
+                                RegisterName::e_0, RegisterName::e_t1, 4);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -283,7 +292,8 @@ TEST_CASE("srlv", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 123456);
         reg_file.set_unsigned(RegisterName::e_t2, 4);
 
-        const Instruction instr(Func::e_srlv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srlv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -298,7 +308,8 @@ TEST_CASE("srlv", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 2);
         reg_file.set_unsigned(RegisterName::e_t2, 0xFFFFFFE1);
 
-        const Instruction instr(Func::e_srlv, RegisterName::e_t0, RegisterName::e_t2, RegisterName::e_t1);
+        const Instruction instr(Func::e_srlv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1);
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
@@ -435,5 +446,58 @@ TEST_CASE("jal", "[Executor]") {
 
         REQUIRE(reg_file.get_pc() == 0x10000ff0);
         REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x10beef04);
+    }
+}
+
+TEST_CASE("wsbh", "[Executor]") {
+    using R = Instruction::Special3Func;
+    using ROp = Instruction::Special3RTypeOp;
+
+    SECTION("Swapping") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, 0xFF00FF00);
+
+        const Instruction instr(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                                RegisterName::e_t1);
+
+        const bool no_error =
+            Executor::handle_special3_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x00FF00FF);
+    }
+
+    SECTION("swapping zeros") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, 0);
+
+        const Instruction instr(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                                RegisterName::e_t1);
+
+        const bool no_error =
+            Executor::handle_special3_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == 0);
+    }
+
+    SECTION("swapping ones") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, ~0U);
+
+        const Instruction instr(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                                RegisterName::e_t1);
+
+        const bool no_error =
+            Executor::handle_special3_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == ~0U);
     }
 }

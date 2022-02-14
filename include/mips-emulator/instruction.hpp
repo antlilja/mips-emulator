@@ -37,8 +37,10 @@ namespace mips_emulator {
             e_addu = 33,
             e_sub = 34,
             e_subu = 35,
-            e_mul = 24,
-            e_mulu = 26,
+            e_sop30 = 0b011000, // SOP30 - shamt: 2 = mul,  3 = muh
+            e_sop31 = 0b011001, // SOP31 - shamt: 2 = mulu, 3 = muhu
+            e_sop32 = 0b011010, // SOP32 - shamt: 2 = div,  3 = mod
+            e_sop33 = 0b011011, // SOP33 - shamt: 2 = divu, 3 = modu
             e_and = 36,
             e_nor = 39,
             e_or = 37,
@@ -174,7 +176,7 @@ namespace mips_emulator {
 
         // Coprocessor 1 structs
         // These are made up names, as I (Emil) couldn't find any specified
-        // type names in the mip32 specifications. 
+        // type names in the mip32 specifications.
         // FPURType is called so because it's similar to R type instructions
         // FPUBType is called so because it does branching.
         // FPUTType is called so because it (T)ransfers to and from the FPU
@@ -185,7 +187,7 @@ namespace mips_emulator {
             uint32_t fs : 5;
             uint32_t ft : 5;
             uint32_t fmt : 5;
-            uint32_t cop1 : 6;           
+            uint32_t cop1 : 6;
         });
 
         PACKED(struct FPUBType {
@@ -251,8 +253,8 @@ namespace mips_emulator {
             jtype.address = address & MASK;
         }
 
-        // No need for FPU register naming since it's just $f[number] 
-        
+        // No need for FPU register naming since it's just $f[number]
+
         // FPU R-Type
         Instruction(const FPURTypeOp op, const uint8_t ft, const uint8_t fs, const uint8_t fd, const FPUFunc func) {
             fpu_rtype.cop1 = static_cast<uint8_t>(COPOpcode::e_cop1);

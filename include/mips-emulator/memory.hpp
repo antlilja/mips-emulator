@@ -1,29 +1,24 @@
 #pragma once
-#include "mips-emulator/span.hpp"
 #include "mips-emulator/result.hpp"
-#include "mips-emulator/memory_error.hpp"
+#include "mips-emulator/span.hpp"
 
+#include <cstdint>
 #include <memory>
-#include <memory_resource>
-#include <type_traits>
 
 namespace mips_emulator {
-    template <typename Address>
+    enum class MemoryError : uint8_t {
+        unaligned_access,
+        out_of_bounds_access,
+    };
+
     struct NullMMIO {};
 
-    template <typename UnsignedWord,
-              template <typename> typename MMIOHandler = NullMMIO>
-    class StaticMemory {
+    template <typename MemoryImplemantion, typename MMIOHandler = NullMMIO>
+    class Memory {
     public:
-        using Address = UnsignedWord;
-        using Size = UnsignedWord;
+        using Address = uint32_t;
 
-        using MMIO = MMIOHandler<Address>;
-
-        StaticMemory(const Size size, MMIO&& mmio,
-                     std::shared_ptr<std::pmr::memory_resource>
-                         memory_resource = nullptr)
-            : memory(size, 0, memory_resource), mmio(mmio) {}
+        Memory(std::shared_ptr<MMIOHandler> mmio) : mmio(std::move(mmio)) {}
 
         // NOTE:
         // This method is deliberately left as non-const because the
@@ -41,9 +36,8 @@ namespace mips_emulator {
             }
 
             // Try to read from MMIO handler
-            if constexpr (std::is_member_function_pointer_v<
-                              decltype(&MMIO::template read<T>)>) {
-                const auto mmio_value = mmio.template read<T>(address);
+            if constexpr (!std::is_same_v<MMIOHandler, NullMMIO>) {
+                const auto mmio_value = mmio->template read<T>(address);
                 if (mmio_value.has_value()) return mmio_value.value();
             }
 
@@ -52,7 +46,8 @@ namespace mips_emulator {
                 return MemoryError::out_of_bounds_access;
             }
 
-            return *reinterpret_cast<T*>(&memory[address]);
+            return *reinterpret_cast<T*>(
+                static_cast<MemoryImplemantion*>(this)->get_memory() + address);
         }
 
         template <typename T>
@@ -68,9 +63,8 @@ namespace mips_emulator {
             }
 
             // Try to write to MMIO handler
-            if constexpr (std::is_member_function_pointer_v<
-                              decltype(&MMIO::template store<T>)>) {
-                if (mmio.template store<T>(address, value)) return {};
+            if constexpr (!std::is_same_v<MMIOHandler, NullMMIO>) {
+                if (mmio->template store<T>(address, value)) return {};
             }
 
             // NOTE: Bounds check after MMIO, MMIO could have a bigger range
@@ -78,19 +72,21 @@ namespace mips_emulator {
                 return MemoryError::out_of_bounds_access;
             }
 
-            *reinterpret_cast<T*>(&memory[address]) = value;
+            *reinterpret_cast<T*>(
+                static_cast<MemoryImplemantion*>(this)->get_memory() +
+                address) = value;
 
             return {};
         }
 
         Span<uint8_t> get_memory() {
             return {
-                memory.data(),
-                memory.size(),
+                static_cast<MemoryImplemantion*>(this)->get_memory(),
+                static_cast<MemoryImplemantion*>(this)->get_size(),
             };
         }
 
-    private:
+    protected:
         template <typename T>
         inline static bool is_aligned(const Address address) {
             return (address & sizeof(T)) == 0;
@@ -98,11 +94,11 @@ namespace mips_emulator {
 
         template <typename T>
         inline bool is_in_bounds(const Address address) {
-            return (address + sizeof(T)) < memory.size();
+            return (address + sizeof(T)) <
+                   static_cast<MemoryImplemantion*>(this)->get_size();
         }
 
-    private:
-        MMIOHandler<Address> mmio;
-        std::pmr::vector<uint8_t> memory;
+    protected:
+        std::shared_ptr<MMIOHandler> mmio;
     };
 } // namespace mips_emulator

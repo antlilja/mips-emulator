@@ -161,15 +161,25 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_srl: {
-                    reg_file.set_unsigned(instr.rtype.rd,
-                                          rt.u >> instr.rtype.shamt);
+                    auto res = rt.u >> instr.rtype.shamt;
+
+                    // ROTR: Rotate word if rs field & 1.
+                    if (instr.rtype.rs & 1)
+                        res |= (rt.u << 32 - instr.rtype.shamt);
+
+                    reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
                 }
                 case Func::e_srlv: {
                     // rt is shifted right by the number specified by the lower
                     // 5 bits of rs, inserting 0's, and then stored in rd
-                    reg_file.set_unsigned(instr.rtype.rd,
-                                          rt.u >> (rs.u & 0x1F));
+                    const auto shift = rs.u & 0x1F;
+                    auto res = rt.u >> shift;
+
+                    // ROTRV: Rotate word if shamt & 1.
+                    if (instr.rtype.shamt & 1) res |= (rt.u << 32 - shift);
+
+                    reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
                 }
                 default: return false;

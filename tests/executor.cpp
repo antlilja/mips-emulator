@@ -537,3 +537,69 @@ TEST_CASE("sop31", "[Executor]") {
         }
     }
 }
+
+TEST_CASE("rotr", "[Executor]") {
+    const auto test_rotr = [](uint32_t amount, uint32_t input,
+                              uint32_t output) {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t1, input);
+
+        // ROTR is SRL with rs bit 1 = 1.
+        const auto rotr_rs = static_cast<RegisterName>(1);
+        const Instruction instr(Func::e_srl, RegisterName::e_t0, rotr_rs,
+                                RegisterName::e_t1, amount);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
+    };
+
+    SECTION("Bit preservation") {
+        for (int i = 0; i < 32; i++)
+            test_rotr(i, ~0U, ~0U);
+    }
+
+    SECTION("Test Cases") {
+        test_rotr(4, 0x162315u, 0x50016231u);
+        test_rotr(2, 0x125623u, 0xc0049588u);
+        test_rotr(3, 0x45324bfau, 0x48a6497fu);
+        test_rotr(9, 0xdeadbeefu, 0x77ef56dfu);
+        test_rotr(12, 0x124u, 0x12400000u);
+        test_rotr(25, 0x4632132u, 0x31909902u);
+    }
+}
+
+TEST_CASE("rotrv", "[Executor]") {
+    const auto test_rotr = [](uint32_t amount, uint32_t input,
+                              uint32_t output) {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t1, input);
+        reg_file.set_unsigned(RegisterName::e_t2, amount);
+
+        // ROTRV is SRLV with shamt bit 1 = 1.
+        const Instruction instr(Func::e_srlv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1, 1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
+    };
+
+    // Reuse tests from rotr
+    SECTION("Bit preservation") {
+        for (int i = 0; i < 32; i++)
+            test_rotr(i, ~0U, ~0U);
+    }
+
+    SECTION("Test Cases") {
+        test_rotr(4, 0x162315u, 0x50016231u);
+        test_rotr(2, 0x125623u, 0xc0049588u);
+        test_rotr(3, 0x45324bfau, 0x48a6497fu);
+        test_rotr(9, 0xdeadbeefu, 0x77ef56dfu);
+        test_rotr(12, 0x124u, 0x12400000u);
+        test_rotr(25, 0x4632132u, 0x31909902u);
+    }
+}

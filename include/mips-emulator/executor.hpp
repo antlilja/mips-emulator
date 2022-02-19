@@ -34,6 +34,14 @@ namespace mips_emulator {
             }
         }
 
+        // Returns the higher 32 bits of a multiplication
+        template <typename small_t, typename big_t>
+        small_t hi_mul(small_t a, small_t b) {
+            const big_t a64 = static_cast<big_t>(a);
+            const big_t b64 = static_cast<big_t>(b);
+            return static_cast<small_t>((a64 * b64) >> 32);
+        };
+
         template <typename RegisterFile>
         [[nodiscard]] inline static bool
         handle_rtype_instr(const Instruction instr, RegisterFile& reg_file) {
@@ -45,6 +53,13 @@ namespace mips_emulator {
             const Register rt = reg_file.get(instr.rtype.rt);
 
             const Func func = static_cast<Func>(instr.rtype.func);
+
+            // SOP helper function
+            // GPR[rd] <- shamt2 if shamt = 2 else shamt 3.
+            auto sop_set_rd = [&](uint32_t shamt2, uint32_t shamt3) {
+                reg_file.set_signed(instr.rtype.rd,
+                                    instr.rtype.shamt == 2 ? shamt2 : shamt3);
+            };
 
             switch (func) {
                 case Func::e_add: {
@@ -63,12 +78,22 @@ namespace mips_emulator {
                     reg_file.set_unsigned(instr.rtype.rd, rs.u - rt.u);
                     break;
                 }
-                case Func::e_mul: {
-                    reg_file.set_signed(instr.rtype.rd, rs.s * rt.s);
+                case Func::e_sop30: { // Shamt: 2 = mul, 3 = muh
+                    sop_set_rd(rs.s * rt.s,
+                               hi_mul<int32_t, int64_t>(rs.s, rt.s));
                     break;
                 }
-                case Func::e_mulu: {
-                    reg_file.set_unsigned(instr.rtype.rd, rs.u * rt.u);
+                case Func::e_sop31: { // Shamt: 2 = mulu, 3 = muhu
+                    sop_set_rd(rs.u * rt.u,
+                               hi_mul<uint32_t, uint64_t>(rs.u, rt.u));
+                    break;
+                }
+                case Func::e_sop32: { // Shamt: 2 = div, 3 = mod
+                    sop_set_rd(rs.s / rt.s, rs.s % rt.s);
+                    break;
+                }
+                case Func::e_sop33: { // Shamt: 2 = divu, 3 = modu
+                    sop_set_rd(rs.u / rt.u, rs.u % rt.u);
                     break;
                 }
                 case Func::e_and: {
@@ -89,6 +114,14 @@ namespace mips_emulator {
                 }
                 case Func::e_jr: {
                     reg_file.set_pc(rs.u);
+                    break;
+                }
+                case Func::e_slt: {
+                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s );
+                    break;
+                }
+                case Func::e_sltu: {
+                    reg_file.set_unsigned(instr.rtype.rd, rs.u < rt.u );
                     break;
                 }
                 case Func::e_jalr: {

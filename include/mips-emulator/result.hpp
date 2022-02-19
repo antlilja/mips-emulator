@@ -9,14 +9,14 @@ namespace mips_emulator {
         [[nodiscard]] Value get_value() const { return value; }
         [[nodiscard]] Error get_error() const { return error; }
 
-        Result(Value value) {
+        Result(Value val) {
             is_err = false;
-            value = value;
+            value = val;
         }
 
-        Result(Error error) {
+        Result(Error err) {
             is_err = true;
-            error = error;
+            error = err;
         }
 
     private:
@@ -36,9 +36,9 @@ namespace mips_emulator {
 
         Result() { is_err = false; }
 
-        Result(Error error) {
+        Result(Error err) {
             is_err = true;
-            error = error;
+            error = err;
         }
 
     private:

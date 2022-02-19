@@ -38,8 +38,10 @@ namespace mips_emulator {
             e_addu = 33,
             e_sub = 34,
             e_subu = 35,
-            e_mul = 24,
-            e_mulu = 26,
+            e_sop30 = 0b011000, // SOP30 - shamt: 2 = mul,  3 = muh
+            e_sop31 = 0b011001, // SOP31 - shamt: 2 = mulu, 3 = muhu
+            e_sop32 = 0b011010, // SOP32 - shamt: 2 = div,  3 = mod
+            e_sop33 = 0b011011, // SOP33 - shamt: 2 = divu, 3 = modu
             e_and = 36,
             e_nor = 39,
             e_or = 37,

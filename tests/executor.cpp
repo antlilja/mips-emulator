@@ -501,3 +501,167 @@ TEST_CASE("wsbh", "[Executor]") {
         REQUIRE(reg_file.get(RegisterName::e_t0).u == ~0U);
     }
 }
+
+TEST_CASE("sop30", "[Executor]") {
+    SECTION("mul") {
+        int32_t values[] = {-0x6FF,   0x55,        0x125,    0x7564,
+                            0x523522, -0x7FCCA241, 0x23525,  0x1247,
+                            0xFFFF,   INT32_MAX,   INT32_MIN};
+
+        for (int val1 : values) {
+            for (int val2 : values) {
+                RegisterFile reg_file;
+                reg_file.set_signed(RegisterName::e_t0, val1);
+                reg_file.set_signed(RegisterName::e_t1, val2);
+
+                Instruction instr(Func::e_sop30, RegisterName::e_t0,
+                                  RegisterName::e_t0, RegisterName::e_t1, 2);
+
+                const bool no_error =
+                    Executor::handle_rtype_instr(instr, reg_file);
+                REQUIRE(no_error);
+
+                REQUIRE(reg_file.get(RegisterName::e_t0).s == val1 * val2);
+            }
+        }
+    }
+
+    // Using mars mult mfhi
+    SECTION("muh") {
+        int32_t cases[][3] = {{-0x126373, -0x126373, (int32_t)0x00000152},
+                              {-0x126373, 0xF2A373, (int32_t)0xffffee92},
+                              {0xABC1235, 0xF2A373, (int32_t)0x000a2ca3}};
+
+        for (auto& test : cases) {
+            const int32_t val1 = test[0];
+            const int32_t val2 = test[1];
+            const int32_t res = test[2];
+
+            RegisterFile reg_file;
+            reg_file.set_signed(RegisterName::e_t0, val1);
+            reg_file.set_signed(RegisterName::e_t1, val2);
+
+            Instruction instr(Func::e_sop30, RegisterName::e_t0,
+                              RegisterName::e_t0, RegisterName::e_t1, 3);
+
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t0).s == res);
+        }
+    }
+}
+
+TEST_CASE("sop31", "[Executor]") {
+    SECTION("mul") {
+        uint32_t values[] = {0x6FF,    0x55,       0x125,   0x7564,
+                             0x523522, 0x7FCCA241, 0x23525, 0x1247,
+                             0xFFFF,   UINT32_MAX, 0};
+
+        for (int val1 : values) {
+            for (int val2 : values) {
+                RegisterFile reg_file;
+                reg_file.set_unsigned(RegisterName::e_t0, val1);
+                reg_file.set_unsigned(RegisterName::e_t1, val2);
+
+                Instruction instr(Func::e_sop31, RegisterName::e_t0,
+                                  RegisterName::e_t0, RegisterName::e_t1, 2);
+
+                const bool no_error =
+                    Executor::handle_rtype_instr(instr, reg_file);
+                REQUIRE(no_error);
+
+                REQUIRE(reg_file.get(RegisterName::e_t0).u == val1 * val2);
+            }
+        }
+    }
+
+    // Using mars multu mfhi
+    SECTION("muh") {
+        uint32_t cases[][3] = {{0x126373, 0x126373, 0x00000152},
+                               {0x126373, 0xF2A373, 0x0000116d},
+                               {0xABC1235, 0xF2A373, 0x000a2ca3}};
+
+        for (auto& test : cases) {
+            const int32_t val1 = test[0];
+            const int32_t val2 = test[1];
+            const int32_t res = test[2];
+
+            RegisterFile reg_file;
+            reg_file.set_signed(RegisterName::e_t0, val1);
+            reg_file.set_signed(RegisterName::e_t1, val2);
+
+            Instruction instr(Func::e_sop30, RegisterName::e_t0,
+                              RegisterName::e_t0, RegisterName::e_t1, 3);
+
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t0).u == res);
+        }
+    }
+}
+
+TEST_CASE("slt", "[Executor]") {
+    SECTION("Equal numbers") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, 5);
+        reg_file.set_signed(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
+    }
+
+    SECTION("Lesser number") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, 2);
+        reg_file.set_signed(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
+    }
+}
+
+TEST_CASE("sltu", "[Executor]") {
+    SECTION("Equal numbers") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 5);
+        reg_file.set_unsigned(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
+    }
+
+    SECTION("Lesser number") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 2);
+        reg_file.set_unsigned(RegisterName::e_t1, 5);
+
+        Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
+    }
+}

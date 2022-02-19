@@ -280,7 +280,6 @@ namespace mips_emulator {
             using ROp = Instruction::Special3RTypeOp;
 
             const Register rt = reg_file.get(instr.special3_rtype.rt);
-            const Register rd = reg_file.get(instr.special3_rtype.rd);
 
             const ROp op = static_cast<ROp>(instr.special3_rtype.op);
             switch (op) {

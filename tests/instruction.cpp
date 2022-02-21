@@ -10,10 +10,31 @@ using IOp = Instruction::ITypeOpcode;
 using JOp = Instruction::JTypeOpcode;
 
 TEST_CASE("R-Type instruction", "[Instruction]") {
+
+    SECTION("get_type") {
+        Func funcs[] = {
+            Func::e_add,   Func::e_addu,  Func::e_sub,   Func::e_subu,
+            Func::e_sop30, Func::e_sop31, Func::e_sop32, Func::e_sop33,
+            Func::e_and,   Func::e_nor,   Func::e_or,    Func::e_xor,
+            Func::e_jr,    Func::e_jalr,  Func::e_slt,   Func::e_sltu,
+            Func::e_sll,   Func::e_sllv,  Func::e_sra,   Func::e_srav,
+            Func::e_srl,   Func::e_srlv,
+        };
+
+        for (auto const f : funcs) {
+
+            const auto instr = Instruction(
+                f, RegisterName::e_0, RegisterName::e_0, RegisterName::e_0);
+
+            REQUIRE(instr.get_type() == Instruction::Type::e_rtype);
+        }
+    }
+
     SECTION("add - zero registers") {
         const Instruction instr(Func::e_add, RegisterName::e_0,
                                 RegisterName::e_0, RegisterName::e_0);
 
+        REQUIRE(instr.get_type() == Instruction::Type::e_rtype);
         REQUIRE(instr.raw == 0x20);
     }
 
@@ -21,6 +42,7 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
         const Instruction instr(Func::e_add, RegisterName::e_t0,
                                 RegisterName::e_t5, RegisterName::e_a0);
 
+        REQUIRE(instr.get_type() == Instruction::Type::e_rtype);
         REQUIRE(instr.raw == 0x01a44020);
     }
 
@@ -68,6 +90,27 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
 }
 
 TEST_CASE("I-Type instruction", "[Instruction]") {
+
+    SECTION("get_type") {
+        IOp iops[] = {IOp::e_beq,  IOp::e_bne,   IOp::e_addi, IOp::e_addiu,
+                      IOp::e_slti, IOp::e_sltiu, IOp::e_andi, IOp::e_ori,
+                      IOp::e_xori, IOp::e_lb,    IOp::e_lbu,  IOp::e_lui,
+                      IOp::e_lw,   IOp::e_sb,    IOp::e_sw};
+
+        for (auto const i : iops) {
+
+            const auto instr_zero =
+                Instruction(i, RegisterName::e_0, RegisterName::e_0, 0);
+
+            REQUIRE(instr_zero.get_type() == Instruction::Type::e_itype);
+
+            const auto instr_non_zero =
+                Instruction(i, RegisterName::e_t0, RegisterName::e_t5, 0xffff);
+
+            REQUIRE(instr_non_zero.get_type() == Instruction::Type::e_itype);
+        }
+    }
+
     SECTION("addi - zero registers and zero imm") {
         const Instruction instr(IOp::e_addi, RegisterName::e_0,
                                 RegisterName::e_0, 0);
@@ -80,6 +123,19 @@ TEST_CASE("I-Type instruction", "[Instruction]") {
                                 RegisterName::e_t5, 0xffff);
 
         REQUIRE(instr.raw == 0x21a8ffff);
+    }
+}
+
+TEST_CASE("J-Type instruction", "[Instruction]") {
+
+    SECTION("get_type") {
+        JOp jops[] = {JOp::e_j, JOp::e_jal};
+
+        for (auto const j : jops) {
+            const auto instr = Instruction(j, 0);
+
+            REQUIRE(instr.get_type() == Instruction::Type::e_jtype);
+        }
     }
 }
 

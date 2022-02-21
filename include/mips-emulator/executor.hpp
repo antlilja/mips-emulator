@@ -87,11 +87,11 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_slt: {
-                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s );
+                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s);
                     break;
                 }
                 case Func::e_sltu: {
-                    reg_file.set_unsigned(instr.rtype.rd, rs.u < rt.u );
+                    reg_file.set_unsigned(instr.rtype.rd, rs.u < rt.u);
                     break;
                 }
                 case Func::e_jalr: {
@@ -339,6 +339,33 @@ namespace mips_emulator {
             return true;
         }
 
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_special3_rtype_instr(const Instruction instr,
+                                    RegisterFile& reg_file) {
+            using Register = typename RegisterFile::Register;
+            using ROp = Instruction::Special3RTypeOp;
+
+            const Register rt = reg_file.get(instr.special3_rtype.rt);
+
+            const ROp op = static_cast<ROp>(instr.special3_rtype.op);
+            switch (op) {
+                case ROp::e_wsbh: {
+                    // Word Swap Bytes Within Halfwords
+                    reg_file.set_unsigned(instr.special3_rtype.rd,
+                                          ((rt.u & 0xFF) << 8) |
+                                              ((rt.u & 0xFF00) >> 8) |
+                                              ((rt.u & 0xFF0000) << 8) |
+                                              ((rt.u & 0xFF000000) >> 8));
+                    break;
+                }
+
+                default: return false;
+            }
+
+            return true;
+        }
+
         template <typename Memory>
         [[nodiscard]] inline static bool step(RegisterFile& reg_file,
                                               Memory& memory) {
@@ -366,8 +393,9 @@ namespace mips_emulator {
                     // TODO: Handle FPU Brach instructions
                     return false;
                 }
+                case Type::e_special3_rtype:
+                    return handle_special3_rtype_instr(instr, reg_file);
             }
         }
-
     }; // namespace Executor
 } // namespace mips_emulator

@@ -347,9 +347,9 @@ namespace mips_emulator {
 
             switch (general.op & ~1) {
                 case 0: return Type::e_rtype;
-                case 2: return Type::e_itype;
+                case 2: return Type::e_jtype;
             }
-            return Type::e_jtype;
+            return Type::e_itype;
         }
 
         uint32_t raw = 0;

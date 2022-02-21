@@ -2,6 +2,7 @@
 #include "mips-emulator/instruction.hpp"
 #include "mips-emulator/register_file.hpp"
 #include "mips-emulator/register_name.hpp"
+#include "mips-emulator/static_memory.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -602,6 +603,152 @@ TEST_CASE("sop31", "[Executor]") {
     }
 }
 
+TEST_CASE("rotr", "[Executor]") {
+    const auto test_rotr = [](uint32_t amount, uint32_t input,
+                              uint32_t output) {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t1, input);
+
+        // ROTR is SRL with rs bit 1 = 1.
+        const auto rotr_rs = static_cast<RegisterName>(1);
+        const Instruction instr(Func::e_srl, RegisterName::e_t0, rotr_rs,
+                                RegisterName::e_t1, amount);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
+    };
+
+    SECTION("Bit preservation") {
+        for (int i = 0; i < 32; i++)
+            test_rotr(i, ~0U, ~0U);
+    }
+
+    SECTION("Test Cases") {
+        test_rotr(4, 0x162315u, 0x50016231u);
+        test_rotr(2, 0x125623u, 0xc0049588u);
+        test_rotr(3, 0x45324bfau, 0x48a6497fu);
+        test_rotr(9, 0xdeadbeefu, 0x77ef56dfu);
+        test_rotr(12, 0x124u, 0x12400000u);
+        test_rotr(25, 0x4632132u, 0x31909902u);
+    }
+}
+
+TEST_CASE("rotrv", "[Executor]") {
+    const auto test_rotr = [](uint32_t amount, uint32_t input,
+                              uint32_t output) {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t1, input);
+        reg_file.set_unsigned(RegisterName::e_t2, amount);
+
+        // ROTRV is SRLV with shamt bit 1 = 1.
+        const Instruction instr(Func::e_srlv, RegisterName::e_t0,
+                                RegisterName::e_t2, RegisterName::e_t1, 1);
+                REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
+    };
+
+    // Reuse tests from rotr
+    SECTION("Bit preservation") {
+        for (int i = 0; i < 32; i++)
+            test_rotr(i, ~0U, ~0U);
+    }
+
+    SECTION("Test Cases") {
+        test_rotr(4, 0x162315u, 0x50016231u);
+        test_rotr(2, 0x125623u, 0xc0049588u);
+        test_rotr(3, 0x45324bfau, 0x48a6497fu);
+        test_rotr(9, 0xdeadbeefu, 0x77ef56dfu);
+        test_rotr(12, 0x124u, 0x12400000u);
+        test_rotr(25, 0x4632132u, 0x31909902u);
+    }
+}
+
+TEST_CASE("load instructions", "[Executor]") {
+    StaticMemory<256> memory;
+    Result v = memory.template store<uint32_t>(4, (uint32_t)0x80222280);
+    REQUIRE(!v.is_error());
+
+    SECTION("byte unsigned") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lb, RegisterName::e_t1, RegisterName::e_t0, 1);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x22);
+    }
+
+    SECTION("byte signed") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lb, RegisterName::e_t1, RegisterName::e_t0, 0);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFFFF80);
+    }
+
+    SECTION("word neg offset") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 20);
+
+        // 20 - 16 = 4
+        Instruction instr(IOp::e_lw, RegisterName::e_t1, RegisterName::e_t0,
+                          0xFFF0);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x80222280);
+    }
+}
+
+TEST_CASE("store instructions", "[Executor]") {
+    StaticMemory<256> memory;
+
+    SECTION("byte") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 20);
+        reg_file.set_unsigned(RegisterName::e_t1, 0x96);
+
+        Instruction instr(IOp::e_sb, RegisterName::e_t1, RegisterName::e_t0,
+                          0xFFF0);
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        auto read_mem = memory.template read<uint8_t>(4);
+        REQUIRE(!read_mem.is_error());
+
+        REQUIRE(read_mem.get_value() == 0x96);
+    }
+
+    SECTION("word") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 20);
+        reg_file.set_unsigned(RegisterName::e_t1, 0x96);
+
+        Instruction instr(IOp::e_sw, RegisterName::e_t1, RegisterName::e_t0, 0);
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        auto read_mem = memory.template read<uint32_t>(20);
+        REQUIRE(!read_mem.is_error());
+
+        REQUIRE(read_mem.get_value() == 0x96);
+    }
+}
+
 TEST_CASE("slt", "[Executor]") {
     SECTION("Equal numbers") {
         RegisterFile reg_file;
@@ -614,7 +761,6 @@ TEST_CASE("slt", "[Executor]") {
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
-
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
     }
 

@@ -111,6 +111,8 @@ namespace mips_emulator {
             e_lw = 35,
             e_sb = 40,
             e_sw = 43,
+            e_lh = 0b100001,
+            e_sh = 0b101001,
         };
 
         enum class JTypeOpcode : uint8_t {

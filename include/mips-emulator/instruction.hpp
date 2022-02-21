@@ -282,6 +282,8 @@ namespace mips_emulator {
             fpu_ttype.zero = 0;
         }
 
+        // raw
+        Instruction(const uint32_t value) { raw = value; }
 
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {

@@ -9,8 +9,6 @@ namespace mips_emulator {
     template <typename Memory>
     class Emulator {
     public:
-        using Register = typename RegisterFile::Register;
-
         template <typename... Args>
         Emulator(Args&&... args) : memory(std::forward<Args>(args)...) {}
 

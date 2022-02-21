@@ -646,7 +646,11 @@ TEST_CASE("rotrv", "[Executor]") {
         // ROTRV is SRLV with shamt bit 1 = 1.
         const Instruction instr(Func::e_srlv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1, 1);
-                REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
     };
 
     // Reuse tests from rotr
@@ -696,6 +700,19 @@ TEST_CASE("load instructions", "[Executor]") {
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFFFF80);
     }
 
+    SECTION("halfword unsigned") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lh, RegisterName::e_t1, RegisterName::e_t0, 0);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x2280);
+    }
+
     SECTION("word neg offset") {
         RegisterFile reg_file;
         reg_file.set_unsigned(RegisterName::e_t0, 20);
@@ -727,6 +744,22 @@ TEST_CASE("store instructions", "[Executor]") {
         REQUIRE(no_error);
 
         auto read_mem = memory.template read<uint8_t>(4);
+        REQUIRE(!read_mem.is_error());
+
+        REQUIRE(read_mem.get_value() == 0x96);
+    }
+
+    SECTION("halfword") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 20);
+        reg_file.set_unsigned(RegisterName::e_t1, 0x10096);
+
+        Instruction instr(IOp::e_sh, RegisterName::e_t1, RegisterName::e_t0, 0);
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        auto read_mem = memory.template read<uint32_t>(20);
         REQUIRE(!read_mem.is_error());
 
         REQUIRE(read_mem.get_value() == 0x96);

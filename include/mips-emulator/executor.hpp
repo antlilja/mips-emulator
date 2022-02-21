@@ -1,37 +1,10 @@
 #pragma once
 #include "mips-emulator/instruction.hpp"
+#include "memory.hpp"
+#include "register_file.hpp"
 
 namespace mips_emulator {
     namespace Executor {
-        template <typename RegisterFile, typename Memory>
-        [[nodiscard]] inline static bool step(RegisterFile& reg_file,
-                                              Memory& memory) {
-            using Type = Instruction::Type;
-
-            const Instruction instr =
-                memory.template read<Instruction>(reg_file.get_pc());
-
-            reg_file.inc_pc();
-
-            switch (instr.get_type()) {
-                case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
-                case Type::e_itype: return handle_itype_instr(instr, reg_file);
-                case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
-                case Type::e_fpu_rtype: {
-                    // TODO: Handle FPU R-Type instructions
-                    return false;
-                }
-                case Type::e_fpu_ttype: {
-                    // TODO: Handle FPU Transfer instructions
-                    return false;
-                }
-                case Type::e_fpu_btype: {
-                    // TODO: Handle FPU Brach instructions
-                    return false;
-                }
-            }
-        }
-
         // Returns the higher 32 bits of a multiplication
         template <typename small_t, typename big_t>
         small_t hi_mul(small_t a, small_t b) {
@@ -40,11 +13,10 @@ namespace mips_emulator {
             return static_cast<small_t>((a64 * b64) >> 32);
         };
 
-        template <typename RegisterFile>
         [[nodiscard]] inline static bool
         handle_rtype_instr(const Instruction instr, RegisterFile& reg_file) {
 
-            using Register = typename RegisterFile::Register;
+            using Register = RegisterFile::Register;
             using Func = Instruction::Func;
 
             const Register rs = reg_file.get(instr.rtype.rs);
@@ -144,8 +116,8 @@ namespace mips_emulator {
                     // implementation dependent, doing this to ensure
                     // portability
                     const auto reg_bit_size =
-                        (sizeof(typename RegisterFile::Unsigned) * 8);
-                    const typename RegisterFile::Unsigned ext =
+                        (sizeof(RegisterFile::Unsigned) * 8);
+                    const RegisterFile::Unsigned ext =
                         (~0) << (reg_bit_size - instr.rtype.shamt);
                     reg_file.set_unsigned(
                         instr.rtype.rd,
@@ -159,8 +131,8 @@ namespace mips_emulator {
                     // portability
                     const auto shift_amount = rs.u & 0x1F;
                     const auto reg_bit_size =
-                        (sizeof(typename RegisterFile::Unsigned) * 8);
-                    const typename RegisterFile::Unsigned ext =
+                        (sizeof(RegisterFile::Unsigned) * 8);
+                    const RegisterFile::Unsigned ext =
                         (~0) << reg_bit_size - shift_amount;
                     reg_file.set_unsigned(
                         instr.rtype.rd,
@@ -186,22 +158,18 @@ namespace mips_emulator {
             return true;
         }
 
-        template <typename RegisterFile>
+        const uint32_t sign_ext_imm(const uint32_t imm) {
+            const uint32_t ext = (~0U) << 16;
+            return ((ext * ((imm >> 15) & 1)) | imm);
+        }
+
         [[nodiscard]] inline static bool
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
-
-            using Register = typename RegisterFile::Register;
+            using Register = RegisterFile::Register;
             using IOp = Instruction::ITypeOpcode;
 
             const Register rs = reg_file.get(instr.rtype.rs);
             const Register rt = reg_file.get(instr.rtype.rt);
-
-            const auto sign_ext_imm =
-                [](const typename RegisterFile::Unsigned imm) {
-                    const typename RegisterFile::Unsigned ext =
-                        (~((typename RegisterFile::Unsigned)0)) << 16;
-                    return ((ext * ((imm >> 15) & 1)) | imm);
-                };
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
@@ -235,7 +203,7 @@ namespace mips_emulator {
                 case IOp::e_slti: {
                     reg_file.set_unsigned(
                         instr.itype.rt,
-                        rs.s < (typename RegisterFile::Signed)sign_ext_imm(
+                        rs.s < (RegisterFile::Signed)sign_ext_imm(
                                    instr.itype.imm));
                     break;
                 }
@@ -262,7 +230,7 @@ namespace mips_emulator {
                 case IOp::e_lui: {
                     reg_file.set_unsigned(
                         instr.itype.rt,
-                        (typename RegisterFile::Unsigned)instr.itype.imm << 16);
+                        (RegisterFile::Unsigned)instr.itype.imm << 16);
                     break;
                 }
 
@@ -272,7 +240,65 @@ namespace mips_emulator {
             return true;
         }
 
-        template <typename RegisterFile>
+        template <typename Memory>
+        [[nodiscard]] inline static bool
+        handle_itype_instr(const Instruction instr, RegisterFile& reg_file,
+                           Memory& memory) {
+            using Register = RegisterFile::Register;
+            using IOp = Instruction::ITypeOpcode;
+            const Register rs = reg_file.get(instr.rtype.rs);
+            const Register rt = reg_file.get(instr.rtype.rt);
+
+            const IOp op = static_cast<IOp>(instr.itype.op);
+
+            const auto get_address = [&]() {
+                return rs.u + sign_ext_imm(instr.itype.imm);
+            };
+
+            switch (op) {
+                case IOp::e_lb: {
+                    // Use signed int to automatically byte extend
+                    auto read_result =
+                        memory.template read<int8_t>(get_address());
+                    if (read_result.is_error()) return false;
+
+                    reg_file.set_signed(
+                        instr.itype.rt,
+                        static_cast<int32_t>(read_result.get_value()));
+
+                    break;
+                }
+                case IOp::e_lw: {
+                    auto read_result =
+                        memory.template read<uint32_t>(get_address());
+
+                    if (read_result.is_error()) return false;
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          read_result.get_value());
+
+                    break;
+                }
+                case IOp::e_sb: {
+                    auto store_result = memory.template store<uint8_t>(
+                        get_address(), static_cast<uint8_t>(rt.u & 0xFF));
+
+                    if (store_result.is_error()) return false;
+                    break;
+                }
+                case IOp::e_sw: {
+                    auto store_result =
+                        memory.template store<uint32_t>(get_address(), rt.u);
+
+                    if (store_result.is_error()) return false;
+                    break;
+                }
+
+                default: return handle_itype_instr(instr, reg_file);
+            }
+
+            return true;
+        }
+
         [[nodiscard]] inline static bool
         handle_jtype_instr(const Instruction instr, RegisterFile& reg_file) {
 
@@ -301,6 +327,36 @@ namespace mips_emulator {
             }
 
             return true;
+        }
+
+        template <typename Memory>
+        [[nodiscard]] inline static bool step(RegisterFile& reg_file,
+                                              Memory& memory) {
+            using Type = Instruction::Type;
+
+            const Instruction instr =
+                memory.template read<Instruction>(reg_file.get_pc());
+
+            reg_file.inc_pc();
+
+            switch (instr.get_type()) {
+                case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
+                case Type::e_itype:
+                    return handle_itype_instr(instr, reg_file, memory);
+                case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
+                case Type::e_fpu_rtype: {
+                    // TODO: Handle FPU R-Type instructions
+                    return false;
+                }
+                case Type::e_fpu_ttype: {
+                    // TODO: Handle FPU Transfer instructions
+                    return false;
+                }
+                case Type::e_fpu_btype: {
+                    // TODO: Handle FPU Brach instructions
+                    return false;
+                }
+            }
         }
 
     }; // namespace Executor

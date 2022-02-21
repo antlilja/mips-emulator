@@ -261,52 +261,41 @@ namespace mips_emulator {
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
-            const auto get_address = [&]() {
-                return rs.u + sign_ext_imm(instr.itype.imm);
+            const auto store_val = [&](auto val) {
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                auto store_result =
+                    memory.template store<decltype(val)>(address, val);
+
+                return !store_result.is_error();
+            };
+
+            // Use Unused Variable a for its type.
+            const auto load_val = [&](auto a) {
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                auto read_result = memory.template read<decltype(a)>(address);
+
+                if (read_result.is_error()) return false;
+
+                reg_file.set_signed(
+                    instr.itype.rt,
+                    static_cast<int32_t>(read_result.get_value()));
+
+                return true;
             };
 
             switch (op) {
-                case IOp::e_lb: {
-                    // Use signed int to automatically byte extend
-                    auto read_result =
-                        memory.template read<int8_t>(get_address());
-                    if (read_result.is_error()) return false;
+                // Use signed int to automatically byte extend
+                case IOp::e_lb: return load_val((int8_t)0);
+                case IOp::e_lh: return load_val((int16_t)0);
+                case IOp::e_lw: return load_val((int32_t)0);
+                case IOp::e_sb: return store_val((uint8_t)rt.u);
+                case IOp::e_sh: return store_val((uint16_t)rt.u);
+                case IOp::e_sw: return store_val(rt.u);
 
-                    reg_file.set_signed(
-                        instr.itype.rt,
-                        static_cast<int32_t>(read_result.get_value()));
-
-                    break;
-                }
-                case IOp::e_lw: {
-                    auto read_result =
-                        memory.template read<uint32_t>(get_address());
-
-                    if (read_result.is_error()) return false;
-                    reg_file.set_unsigned(instr.itype.rt,
-                                          read_result.get_value());
-
-                    break;
-                }
-                case IOp::e_sb: {
-                    auto store_result = memory.template store<uint8_t>(
-                        get_address(), static_cast<uint8_t>(rt.u & 0xFF));
-
-                    if (store_result.is_error()) return false;
-                    break;
-                }
-                case IOp::e_sw: {
-                    auto store_result =
-                        memory.template store<uint32_t>(get_address(), rt.u);
-
-                    if (store_result.is_error()) return false;
-                    break;
-                }
-
-                default: return handle_itype_instr(instr, reg_file);
+                default: break;
             }
 
-            return true;
+            return handle_itype_instr(instr, reg_file);
         }
 
         [[nodiscard]] inline static bool

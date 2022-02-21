@@ -243,8 +243,47 @@ namespace mips_emulator {
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
+            const auto get_address = [&]() {
+                return rs.u + sign_ext_imm(instr.itype.imm);
+            };
 
             switch (op) {
+                case IOp::e_lb: {
+                    // Use signed int to automatically byte extend
+                    auto read_result =
+                        memory.template read<int8_t>(get_address());
+                    if (read_result.is_error()) return false;
+
+                    reg_file.set_signed(
+                        instr.itype.rt,
+                        static_cast<int32_t>(read_result.get_value()));
+
+                    break;
+                }
+                case IOp::e_lw: {
+                    auto read_result =
+                        memory.template read<uint32_t>(get_address());
+
+                    if (read_result.is_error()) return false;
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          read_result.get_value());
+
+                    break;
+                }
+                case IOp::e_sb: {
+                    auto store_result = memory.template store<uint8_t>(
+                        get_address(), static_cast<uint8_t>(rt.u & 0xFF));
+
+                    if (store_result.is_error()) return false;
+                    break;
+                }
+                case IOp::e_sw: {
+                    auto store_result =
+                        memory.template store<uint32_t>(get_address(), rt.u);
+
+                    if (store_result.is_error()) return false;
+                    break;
+                }
 
                 default: return handle_itype_instr(instr, reg_file);
             }

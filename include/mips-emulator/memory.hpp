@@ -89,7 +89,7 @@ namespace mips_emulator {
     protected:
         template <typename T>
         inline static bool is_aligned(const Address address) {
-            return (address & sizeof(T)) == 0;
+            return (address & (sizeof(T) - 1)) == 0;
         }
 
         template <typename T>

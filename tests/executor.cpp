@@ -593,7 +593,7 @@ TEST_CASE("rotrv", "[Executor]") {
         // ROTRV is SRLV with shamt bit 1 = 1.
         const Instruction instr(Func::e_srlv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1, 1);
-                REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
     };
 
     // Reuse tests from rotr
@@ -756,5 +756,49 @@ TEST_CASE("sltu", "[Executor]") {
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
+    }
+}
+
+TEST_CASE("step", "[Executor]") {
+    StaticMemory<256> memory;
+    RegisterFile reg_file;
+
+    reg_file.set_unsigned(RegisterName::e_t0, 5);
+    reg_file.set_unsigned(RegisterName::e_t1, 2);
+
+    reg_file.set_pc(0);
+
+    SECTION("step rtype") {
+
+        Instruction instr(Func::e_add, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+
+        auto store_result = memory.template store<uint32_t>(0, instr.raw);
+        REQUIRE_FALSE(store_result.is_error());
+
+        const bool no_error =
+            Executor::step<StaticMemory<256>>(reg_file, memory);
+
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).s == 7);
+        REQUIRE(reg_file.get_pc() == 4);
+    }
+
+    SECTION("step itype") {
+
+        Instruction instr(IOp::e_ori, RegisterName::e_t2, RegisterName::e_t1,
+                          1);
+
+        auto store_result = memory.template store<uint32_t>(0, instr.raw);
+        REQUIRE_FALSE(store_result.is_error());
+
+        const bool no_error =
+            Executor::step<StaticMemory<256>>(reg_file, memory);
+
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 3);
+        REQUIRE(reg_file.get_pc() == 4);
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "mips-emulator/instruction.hpp"
+#include "memory.hpp"
 #include "register_file.hpp"
 
 namespace mips_emulator {
@@ -149,6 +150,10 @@ namespace mips_emulator {
             return true;
         }
 
+        const uint32_t sign_ext_imm(const uint32_t imm) {
+            const uint32_t ext = (~0U) << 16;
+            return ((ext * ((imm >> 15) & 1)) | imm);
+        }
 
         [[nodiscard]] inline static bool
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
@@ -157,13 +162,6 @@ namespace mips_emulator {
 
             const Register rs = reg_file.get(instr.rtype.rs);
             const Register rt = reg_file.get(instr.rtype.rt);
-
-            const auto sign_ext_imm =
-                [](const typename RegisterFile::Unsigned imm) {
-                    const typename RegisterFile::Unsigned ext =
-                        (~((typename RegisterFile::Unsigned)0)) << 16;
-                    return ((ext * ((imm >> 15) & 1)) | imm);
-                };
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
@@ -234,6 +232,25 @@ namespace mips_emulator {
             return true;
         }
 
+        template <typename Memory>
+        [[nodiscard]] inline static bool
+        handle_itype_instr(const Instruction instr, RegisterFile& reg_file,
+                           Memory& memory) {
+            using Register = RegisterFile::Register;
+            using IOp = Instruction::ITypeOpcode;
+            const Register rs = reg_file.get(instr.rtype.rs);
+            const Register rt = reg_file.get(instr.rtype.rt);
+
+            const IOp op = static_cast<IOp>(instr.itype.op);
+
+
+            switch (op) {
+
+                default: return handle_itype_instr(instr, reg_file);
+            }
+
+            return true;
+        }
 
         [[nodiscard]] inline static bool
         handle_jtype_instr(const Instruction instr, RegisterFile& reg_file) {

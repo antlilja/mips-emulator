@@ -366,7 +366,7 @@ namespace mips_emulator {
             if (read_result.is_error()) return false;
             const auto instr = Instruction(read_result.get_value());
 
-            reg_file.inc_pc();
+            reg_file.update_pc();
 
             switch (instr.get_type()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);

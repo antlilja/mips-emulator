@@ -84,7 +84,7 @@ TEST_CASE("or", "[Executor]") {
 }
 
 TEST_CASE("beq", "[Executor]") {
-    SECTION("Positive numbers") {
+    SECTION("Positive numbers (Branch)") {
         using Address = typename RegisterFile::Unsigned;
         RegisterFile reg_file;
 
@@ -96,12 +96,55 @@ TEST_CASE("beq", "[Executor]") {
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
+        REQUIRE(reg_file.get_pc() == 0);
+
+        reg_file.update_pc(); // moves past delays slot
+
         REQUIRE(reg_file.get_pc() == 68);
+    }
+
+    SECTION("Positive numbers (Don't Branch)") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 7);
+        reg_file.set_unsigned(RegisterName::e_t1, 9);
+        Instruction instr(IOp::e_beq, RegisterName::e_t0, RegisterName::e_t1,
+                          16);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 4);
     }
 }
 
 TEST_CASE("bne", "[Executor]") {
-    SECTION("Positive numbers") {
+    SECTION("Positive numbers (Branch)") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 7);
+        reg_file.set_unsigned(RegisterName::e_t1, 9);
+
+        Instruction instr(IOp::e_bne, RegisterName::e_t0, RegisterName::e_t1,
+                          16);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 68);
+    }
+
+    SECTION("Positive numbers (Don't Branch)") {
         using Address = typename RegisterFile::Unsigned;
         RegisterFile reg_file;
 
@@ -115,6 +158,10 @@ TEST_CASE("bne", "[Executor]") {
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get_pc() == 0);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 4);
     }
 }
 

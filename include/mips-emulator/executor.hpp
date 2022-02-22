@@ -187,17 +187,17 @@ namespace mips_emulator {
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.set_pc(reg_file.get_pc() +
-                                        (sign_ext_imm(instr.itype.imm) * 4) +
-                                        4);
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() + 4 +
+                            (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
-                        reg_file.set_pc(reg_file.get_pc() +
-                                        (sign_ext_imm(instr.itype.imm) * 4) +
-                                        4);
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() + 4 +
+                            (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
                 }

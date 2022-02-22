@@ -142,7 +142,7 @@ TEST_CASE("aui", "[Executor]") {
 
         reg_file.set_unsigned(RegisterName::e_t0, 0x1337);
 
-        Instruction instr(IOp::e_aui, RegisterName::e_t1, RegisterName::e_0,
+        Instruction instr(IOp::e_aui, RegisterName::e_t1, RegisterName::e_t0,
                           0xbeef);
 
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
@@ -421,21 +421,6 @@ TEST_CASE("xori", "[Executor]") {
     }
 }
 
-TEST_CASE("lui", "[Executor]") {
-    SECTION("Positive numbers") {
-        using Address = typename RegisterFile::Unsigned;
-        RegisterFile reg_file;
-
-        Instruction instr(IOp::e_lui, RegisterName::e_t1, RegisterName::e_0,
-                          0xbeef);
-
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xbeef0000);
-    }
-}
-
 TEST_CASE("j", "[Executor]") {
     SECTION("Positive numbers") {
         using Unsigned = typename RegisterFile::Unsigned;
@@ -666,7 +651,7 @@ TEST_CASE("rotrv", "[Executor]") {
 
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
-      
+
         REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
     };
 

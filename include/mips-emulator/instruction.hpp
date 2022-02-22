@@ -101,6 +101,7 @@ namespace mips_emulator {
             e_addi = 8,
             e_addiu = 9,
             e_aui = 15,
+            e_auipc = 57,
             e_slti = 10,
             e_sltiu = 11,
             e_andi = 12,

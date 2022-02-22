@@ -187,16 +187,14 @@ namespace mips_emulator {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
                         reg_file.set_pc(reg_file.get_pc() +
-                                        (sign_ext_imm(instr.itype.imm) * 4) +
-                                        4);
+                                        (sign_ext_imm(instr.itype.imm) * 4) + 4);
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
                         reg_file.set_pc(reg_file.get_pc() +
-                                        (sign_ext_imm(instr.itype.imm) * 4) +
-                                        4);
+                                        (sign_ext_imm(instr.itype.imm) * 4) + 4);
                     }
                     break;
                 }
@@ -206,21 +204,24 @@ namespace mips_emulator {
                     break;
                 }
                 case IOp::e_addiu: {
-                    reg_file.set_unsigned(instr.itype.rt,
-                                          rs.u + sign_ext_imm(instr.itype.imm));
+                    reg_file.set_unsigned(instr.itype.rs,
+                                          reg_file.get_pc() + instr.itype.imm << 16);
                     break;
                 }
                 case IOp::e_aui: {
-                    reg_file.set_unsigned(
-                        instr.itype.rt,
-                        rs.u + sign_ext_imm(instr.itype.imm << 16));
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u + sign_ext_imm(instr.itype.imm << 16));
+                    break;
+                }
+                case IOp::e_auipc: {
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u + sign_ext_imm(instr.itype.imm << 16));
                     break;
                 }
                 case IOp::e_slti: {
-                    reg_file.set_unsigned(
-                        instr.itype.rt,
-                        rs.s < (RegisterFile::Signed)sign_ext_imm(
-                                   instr.itype.imm));
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.s < (RegisterFile::Signed)sign_ext_imm(
+                                          instr.itype.imm));
                     break;
                 }
                 case IOp::e_sltiu: {

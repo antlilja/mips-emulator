@@ -309,16 +309,15 @@ namespace mips_emulator {
                                 (Address)(reg_file.get_pc() & (0xf << 28));
 
             const JOp op = static_cast<JOp>(instr.jtype.op);
-
             switch (op) {
                 case JOp::e_j: {
-                    reg_file.set_pc(jta);
+                    reg_file.delayed_branch(jta);
                     break;
                 }
                 case JOp::e_jal: {
                     reg_file.set_unsigned(RegisterName::e_ra,
                                           reg_file.get_pc() + 4);
-                    reg_file.set_pc(jta);
+                    reg_file.delayed_branch(jta);
                     break;
                 }
 

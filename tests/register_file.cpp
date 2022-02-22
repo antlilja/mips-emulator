@@ -6,8 +6,7 @@
 
 using namespace mips_emulator;
 
-TEST_CASE("Default initialization is zero initalized",
-                   "[RegisterFile]") {
+TEST_CASE("Default initialization is zero initalized", "[RegisterFile]") {
     RegisterFile state;
     for (int i = 0; i < RegisterFile::REGISTER_COUNT; ++i)
         REQUIRE(state.get(i).u == 0);

@@ -94,8 +94,8 @@ TEST_CASE("I-Type instruction", "[Instruction]") {
     SECTION("get_type") {
         IOp iops[] = {IOp::e_beq,  IOp::e_bne,   IOp::e_addi, IOp::e_addiu,
                       IOp::e_slti, IOp::e_sltiu, IOp::e_andi, IOp::e_ori,
-                      IOp::e_xori, IOp::e_lb,    IOp::e_lbu,  IOp::e_lui,
-                      IOp::e_lw,   IOp::e_sb,    IOp::e_sw};
+                      IOp::e_xori, IOp::e_lb,    IOp::e_lbu,  IOp::e_lw,
+                      IOp::e_sb,   IOp::e_sw};
 
         for (auto const i : iops) {
 

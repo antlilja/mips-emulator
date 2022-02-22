@@ -108,7 +108,6 @@ namespace mips_emulator {
             e_xori = 14,
             e_lb = 32,
             e_lbu = 36,
-            e_lui = 15,
             e_lw = 35,
             e_sb = 40,
             e_sw = 43,

@@ -211,8 +211,9 @@ namespace mips_emulator {
                     break;
                 }
                 case IOp::e_aui: {
-                    reg_file.set_unsigned(instr.itype.rt,
-                                          rs.u + sign_ext_imm(instr.itype.imm << 16));
+                    reg_file.set_unsigned(
+                        instr.itype.rt,
+                        rs.u + sign_ext_imm(instr.itype.imm << 16));
                     break;
                 }
                 case IOp::e_slti: {
@@ -240,12 +241,6 @@ namespace mips_emulator {
                 case IOp::e_xori: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u ^ instr.itype.imm);
-                    break;
-                }
-                case IOp::e_lui: {
-                    reg_file.set_unsigned(
-                        instr.itype.rt,
-                        (RegisterFile::Unsigned)instr.itype.imm << 16);
                     break;
                 }
 

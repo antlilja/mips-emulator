@@ -133,7 +133,7 @@ namespace mips_emulator {
                     const auto reg_bit_size =
                         (sizeof(RegisterFile::Unsigned) * 8);
                     const RegisterFile::Unsigned ext =
-                        (~0) << reg_bit_size - shift_amount;
+                        (~0) << (reg_bit_size - shift_amount);
                     reg_file.set_unsigned(
                         instr.rtype.rd,
                         (ext * ((rt.u >> (reg_bit_size - 1)) & 1)) |
@@ -145,7 +145,7 @@ namespace mips_emulator {
 
                     // ROTR: Rotate word if rs field & 1.
                     if (instr.rtype.rs & 1)
-                        res |= (rt.u << 32 - instr.rtype.shamt);
+                        res |= (rt.u << (32 - instr.rtype.shamt));
 
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
@@ -157,7 +157,7 @@ namespace mips_emulator {
                     auto res = rt.u >> shift;
 
                     // ROTRV: Rotate word if shamt & 1.
-                    if (instr.rtype.shamt & 1) res |= (rt.u << 32 - shift);
+                    if (instr.rtype.shamt & 1) res |= (rt.u << (32 - shift));
 
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;

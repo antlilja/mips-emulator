@@ -450,6 +450,59 @@ TEST_CASE("jal", "[Executor]") {
     }
 }
 
+TEST_CASE("wsbh", "[Executor]") {
+    using R = Instruction::Special3Func;
+    using ROp = Instruction::Special3RTypeOp;
+
+    SECTION("Swapping") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, 0xFF00FF00);
+
+        const Instruction instr(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                                RegisterName::e_t1);
+
+        const bool no_error =
+            Executor::handle_special3_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x00FF00FF);
+    }
+
+    SECTION("swapping zeros") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, 0);
+
+        const Instruction instr(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                                RegisterName::e_t1);
+
+        const bool no_error =
+            Executor::handle_special3_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == 0);
+    }
+
+    SECTION("swapping ones") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, ~0U);
+
+        const Instruction instr(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+                                RegisterName::e_t1);
+
+        const bool no_error =
+            Executor::handle_special3_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t0).u == ~0U);
+    }
+}
+
 TEST_CASE("sop30", "[Executor]") {
     SECTION("mul") {
         int32_t values[] = {-0x6FF,   0x55,        0x125,    0x7564,
@@ -593,6 +646,10 @@ TEST_CASE("rotrv", "[Executor]") {
         // ROTRV is SRLV with shamt bit 1 = 1.
         const Instruction instr(Func::e_srlv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1, 1);
+
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+      
         REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
     };
 
@@ -643,6 +700,19 @@ TEST_CASE("load instructions", "[Executor]") {
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFFFF80);
     }
 
+    SECTION("halfword unsigned") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lh, RegisterName::e_t1, RegisterName::e_t0, 0);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x2280);
+    }
+
     SECTION("word neg offset") {
         RegisterFile reg_file;
         reg_file.set_unsigned(RegisterName::e_t0, 20);
@@ -674,6 +744,22 @@ TEST_CASE("store instructions", "[Executor]") {
         REQUIRE(no_error);
 
         auto read_mem = memory.template read<uint8_t>(4);
+        REQUIRE(!read_mem.is_error());
+
+        REQUIRE(read_mem.get_value() == 0x96);
+    }
+
+    SECTION("halfword") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 20);
+        reg_file.set_unsigned(RegisterName::e_t1, 0x10096);
+
+        Instruction instr(IOp::e_sh, RegisterName::e_t1, RegisterName::e_t0, 0);
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        auto read_mem = memory.template read<uint32_t>(20);
         REQUIRE(!read_mem.is_error());
 
         REQUIRE(read_mem.get_value() == 0x96);

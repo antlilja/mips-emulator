@@ -87,11 +87,11 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_slt: {
-                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s );
+                    reg_file.set_unsigned(instr.rtype.rd, rs.s < rt.s);
                     break;
                 }
                 case Func::e_sltu: {
-                    reg_file.set_unsigned(instr.rtype.rd, rs.u < rt.u );
+                    reg_file.set_unsigned(instr.rtype.rd, rs.u < rt.u);
                     break;
                 }
                 case Func::e_jalr: {
@@ -133,7 +133,7 @@ namespace mips_emulator {
                     const auto reg_bit_size =
                         (sizeof(RegisterFile::Unsigned) * 8);
                     const RegisterFile::Unsigned ext =
-                        (~0) << reg_bit_size - shift_amount;
+                        (~0) << (reg_bit_size - shift_amount);
                     reg_file.set_unsigned(
                         instr.rtype.rd,
                         (ext * ((rt.u >> (reg_bit_size - 1)) & 1)) |
@@ -145,7 +145,7 @@ namespace mips_emulator {
 
                     // ROTR: Rotate word if rs field & 1.
                     if (instr.rtype.rs & 1)
-                        res |= (rt.u << 32 - instr.rtype.shamt);
+                        res |= (rt.u << (32 - instr.rtype.shamt));
 
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
@@ -157,7 +157,7 @@ namespace mips_emulator {
                     auto res = rt.u >> shift;
 
                     // ROTRV: Rotate word if shamt & 1.
-                    if (instr.rtype.shamt & 1) res |= (rt.u << 32 - shift);
+                    if (instr.rtype.shamt & 1) res |= (rt.u << (32 - shift));
 
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
@@ -261,52 +261,41 @@ namespace mips_emulator {
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
-            const auto get_address = [&]() {
-                return rs.u + sign_ext_imm(instr.itype.imm);
+            const auto store_val = [&](auto val) {
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                auto store_result =
+                    memory.template store<decltype(val)>(address, val);
+
+                return !store_result.is_error();
+            };
+
+            // Use Unused Variable a for its type.
+            const auto load_val = [&](auto a) {
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                auto read_result = memory.template read<decltype(a)>(address);
+
+                if (read_result.is_error()) return false;
+
+                reg_file.set_signed(
+                    instr.itype.rt,
+                    static_cast<int32_t>(read_result.get_value()));
+
+                return true;
             };
 
             switch (op) {
-                case IOp::e_lb: {
-                    // Use signed int to automatically byte extend
-                    auto read_result =
-                        memory.template read<int8_t>(get_address());
-                    if (read_result.is_error()) return false;
+                // Use signed int to automatically byte extend
+                case IOp::e_lb: return load_val((int8_t)0);
+                case IOp::e_lh: return load_val((int16_t)0);
+                case IOp::e_lw: return load_val((int32_t)0);
+                case IOp::e_sb: return store_val((uint8_t)rt.u);
+                case IOp::e_sh: return store_val((uint16_t)rt.u);
+                case IOp::e_sw: return store_val(rt.u);
 
-                    reg_file.set_signed(
-                        instr.itype.rt,
-                        static_cast<int32_t>(read_result.get_value()));
-
-                    break;
-                }
-                case IOp::e_lw: {
-                    auto read_result =
-                        memory.template read<uint32_t>(get_address());
-
-                    if (read_result.is_error()) return false;
-                    reg_file.set_unsigned(instr.itype.rt,
-                                          read_result.get_value());
-
-                    break;
-                }
-                case IOp::e_sb: {
-                    auto store_result = memory.template store<uint8_t>(
-                        get_address(), static_cast<uint8_t>(rt.u & 0xFF));
-
-                    if (store_result.is_error()) return false;
-                    break;
-                }
-                case IOp::e_sw: {
-                    auto store_result =
-                        memory.template store<uint32_t>(get_address(), rt.u);
-
-                    if (store_result.is_error()) return false;
-                    break;
-                }
-
-                default: return handle_itype_instr(instr, reg_file);
+                default: break;
             }
 
-            return true;
+            return handle_itype_instr(instr, reg_file);
         }
 
         [[nodiscard]] inline static bool
@@ -330,6 +319,33 @@ namespace mips_emulator {
                     reg_file.set_unsigned(RegisterName::e_ra,
                                           reg_file.get_pc() + 4);
                     reg_file.set_pc(jta);
+                    break;
+                }
+
+                default: return false;
+            }
+
+            return true;
+        }
+
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_special3_rtype_instr(const Instruction instr,
+                                    RegisterFile& reg_file) {
+            using Register = typename RegisterFile::Register;
+            using ROp = Instruction::Special3RTypeOp;
+
+            const Register rt = reg_file.get(instr.special3_rtype.rt);
+
+            const ROp op = static_cast<ROp>(instr.special3_rtype.op);
+            switch (op) {
+                case ROp::e_wsbh: {
+                    // Word Swap Bytes Within Halfwords
+                    reg_file.set_unsigned(instr.special3_rtype.rd,
+                                          ((rt.u & 0xFF) << 8) |
+                                              ((rt.u & 0xFF00) >> 8) |
+                                              ((rt.u & 0xFF0000) << 8) |
+                                              ((rt.u & 0xFF000000) >> 8));
                     break;
                 }
 
@@ -369,8 +385,9 @@ namespace mips_emulator {
                     // TODO: Handle FPU Brach instructions
                     return false;
                 }
+                case Type::e_special3_rtype:
+                    return handle_special3_rtype_instr(instr, reg_file);
             }
         }
-
     }; // namespace Executor
 } // namespace mips_emulator

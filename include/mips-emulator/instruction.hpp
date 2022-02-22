@@ -30,6 +30,7 @@ namespace mips_emulator {
             e_fpu_rtype,
             e_fpu_btype,
             e_fpu_ttype,
+            e_special3_rtype,
         };
 
         enum class Func : uint8_t {
@@ -110,6 +111,8 @@ namespace mips_emulator {
             e_lw = 35,
             e_sb = 40,
             e_sw = 43,
+            e_lh = 0b100001,
+            e_sh = 0b101001,
         };
 
         enum class JTypeOpcode : uint8_t {
@@ -140,12 +143,28 @@ namespace mips_emulator {
 
         // Floating Point Format field
         enum class FPURTypeOp : uint8_t {
-            e_fmt_s = 16,  // Use Single
-            e_fmt_d = 17,  // Use Double
-            e_fmt_w = 20,  // Use 32 bit
-            e_fmt_l = 21,  // Use 64 bit
+            e_fmt_s = 16, // Use Single
+            e_fmt_d = 17, // Use Double
+            e_fmt_w = 20, // Use 32 bit
+            e_fmt_l = 21, // Use 64 bit
             e_cmp_condn_s = 24,
             e_cmp_condn_d = 25,
+        };
+
+        // Opcode for special3 instruction
+        enum class Special3Opcode : uint8_t {
+            e_special3 = 0b011111,
+        };
+
+        // Func enum for special3 instructions
+        enum class Special3Func : uint8_t { e_bshfl = 0b100000 };
+
+        // Opcode enum for special3 r-type like instructions
+        // Calling them R-type due to lack of better name
+        // Special3 instructions have a bunch of different layouts depending on
+        // the func field
+        enum class Special3RTypeOp : uint8_t {
+            e_wsbh = 0b00010,
         };
 
         PACKED(struct General {
@@ -205,6 +224,20 @@ namespace mips_emulator {
             uint32_t cop1 : 6;
         });
 
+        // Special3 structs
+        // Special3RType, similar to R type instruction
+        // Calling it R-type due to lack of better name
+        // Special3 instructions have a bunch of different layouts depending on
+        // the func field
+        PACKED(struct Special3RType {
+            uint32_t func : 6;
+            uint32_t op : 5;
+            uint32_t rd : 5;
+            uint32_t rt : 5;
+            uint32_t zero : 5;
+            uint32_t special3 : 6;
+        });
+
         // Make sure internal structs are the same size
         static_assert(sizeof(General) == 4,
                       "Instruction::General bitfield is not 4 bytes in size");
@@ -220,7 +253,9 @@ namespace mips_emulator {
                       "Instruction::FPUIType bitfield is not 4 bytes in size");
         static_assert(sizeof(FPUTType) == 4,
                       "Instruction::FPUTType bitfield is not 4 bytes in size");
-
+        static_assert(
+            sizeof(Special3RType) == 4,
+            "Instruction::Special3RType bitfield is not 4 bytes in size");
 
         // R-Type
         Instruction(const Func func, const RegisterName rd,
@@ -256,7 +291,8 @@ namespace mips_emulator {
         // No need for FPU register naming since it's just $f[number]
 
         // FPU R-Type
-        Instruction(const FPURTypeOp op, const uint8_t ft, const uint8_t fs, const uint8_t fd, const FPUFunc func) {
+        Instruction(const FPURTypeOp op, const uint8_t ft, const uint8_t fs,
+                    const uint8_t fd, const FPUFunc func) {
             fpu_rtype.cop1 = static_cast<uint8_t>(COPOpcode::e_cop1);
             fpu_rtype.fmt = static_cast<uint8_t>(op);
             fpu_rtype.ft = ft & 31;
@@ -274,7 +310,8 @@ namespace mips_emulator {
         }
 
         // FPU T-Type
-        Instruction(const FPUTTypeOp op, const RegisterName rt, const uint8_t fs) {
+        Instruction(const FPUTTypeOp op, const RegisterName rt,
+                    const uint8_t fs) {
             fpu_ttype.cop1 = static_cast<uint8_t>(COPOpcode::e_cop1);
             fpu_ttype.op = static_cast<uint8_t>(op);
             fpu_ttype.rt = static_cast<uint8_t>(rt);
@@ -285,6 +322,18 @@ namespace mips_emulator {
         // raw
         Instruction(const uint32_t value) { raw = value; }
 
+        // Special3 R-Type
+        Instruction(const Special3Func func, const Special3RTypeOp op,
+                    const RegisterName rd, const RegisterName rt) {
+            special3_rtype.func = static_cast<uint8_t>(func);
+            special3_rtype.op = static_cast<uint8_t>(op);
+            special3_rtype.rd = static_cast<uint8_t>(rd);
+            special3_rtype.rt = static_cast<uint8_t>(rt);
+            special3_rtype.zero = 0;
+            special3_rtype.special3 =
+                static_cast<uint8_t>(Special3Opcode::e_special3);
+        }
+
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {
                 if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
@@ -293,12 +342,17 @@ namespace mips_emulator {
 
                 return Type::e_fpu_ttype;
             }
+            else if (general.op ==
+                     static_cast<uint8_t>(Special3Opcode::e_special3)) {
+                // TODO, handle other types
+                return Type::e_special3_rtype;
+            }
 
             switch (general.op & ~1) {
                 case 0: return Type::e_rtype;
-                case 2: return Type::e_itype;
+                case 2: return Type::e_jtype;
             }
-            return Type::e_jtype;
+            return Type::e_itype;
         }
 
         uint32_t raw = 0;
@@ -311,7 +365,9 @@ namespace mips_emulator {
         FPURType fpu_rtype;
         FPUTType fpu_ttype;
         FPUBType fpu_btype;
-    };
+
+        Special3RType special3_rtype;
+    }; // namespace mips_emulator
 
     // Make sure Instruction union matches the MIPS instruction size
     static_assert(sizeof(Instruction) == 4,

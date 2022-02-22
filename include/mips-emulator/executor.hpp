@@ -210,6 +210,11 @@ namespace mips_emulator {
                                           rs.u + sign_ext_imm(instr.itype.imm));
                     break;
                 }
+                case IOp::e_aui: {
+                    reg_file.set_unsigned(instr.itype.rt,
+                                          rs.u + sign_ext_imm(instr.itype.imm << 16));
+                    break;
+                }
                 case IOp::e_slti: {
                     reg_file.set_unsigned(
                         instr.itype.rt,

@@ -69,7 +69,20 @@ namespace mips_emulator {
                 regs[i].u = 0;
         }
 
+        void delayed_branch(Unsigned target) noexcept {
+            branch_flag = true;
+            branch_target = target;
+        }
+
+        void update_pc() noexcept {
+            inc_pc();
+            pc += branch_flag * (branch_target - pc);
+        }
+
     private:
+        bool branch_flag = false;
+        Unsigned branch_target = 0;
+
         Unsigned pc = 0;
         Register regs[REGISTER_COUNT] = {};
     };

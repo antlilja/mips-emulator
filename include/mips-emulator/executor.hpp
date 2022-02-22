@@ -339,6 +339,25 @@ namespace mips_emulator {
 
             const ROp op = static_cast<ROp>(instr.special3_rtype.op);
             switch (op) {
+                case ROp::e_bitswap: {
+                    // Swaps (reverses) bits in a byte
+                    // Example: 0b11001000 -> 0b00010011
+                    const auto reverse_byte_bits = [&](uint8_t val) {
+                        val = ((val >> 1) & 0x55) | ((val & 0x55) << 1);
+                        val = ((val >> 2) & 0x33) | ((val & 0x33) << 2);
+                        val = ((val >> 4) & 0x0f) | ((val & 0x0f) << 4);
+                        return val;
+                    };
+
+                    // Swaps (reverses) the bits for each byte
+                    uint32_t result = 0;
+                    for (int i = 0; i < sizeof(uint32_t); i++)
+                        result |= reverse_byte_bits((rt.u >> i * 8)) << (i * 8);
+
+                    reg_file.set_unsigned(instr.special3_rtype.rd, result);
+
+                    break;
+                }
                 case ROp::e_wsbh: {
                     // Word Swap Bytes Within Halfwords
                     reg_file.set_unsigned(instr.special3_rtype.rd,

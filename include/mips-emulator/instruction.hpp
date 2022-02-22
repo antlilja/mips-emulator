@@ -164,6 +164,7 @@ namespace mips_emulator {
         // Special3 instructions have a bunch of different layouts depending on
         // the func field
         enum class Special3RTypeOp : uint8_t {
+            e_bitswap = 0,
             e_wsbh = 0b00010,
         };
 

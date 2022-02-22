@@ -759,7 +759,7 @@ TEST_CASE("store instructions", "[Executor]") {
             Executor::handle_itype_instr(instr, reg_file, memory);
         REQUIRE(no_error);
 
-        auto read_mem = memory.template read<uint32_t>(20);
+        auto read_mem = memory.template read<uint16_t>(20);
         REQUIRE(!read_mem.is_error());
 
         REQUIRE(read_mem.get_value() == 0x96);

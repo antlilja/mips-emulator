@@ -360,8 +360,11 @@ namespace mips_emulator {
                                               Memory& memory) {
             using Type = Instruction::Type;
 
-            const Instruction instr =
-                memory.template read<Instruction>(reg_file.get_pc());
+            auto read_result =
+                memory.template read<uint32_t>(reg_file.get_pc());
+
+            if (read_result.is_error()) return false;
+            const auto instr = Instruction(read_result.get_value());
 
             reg_file.inc_pc();
 

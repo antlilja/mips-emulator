@@ -319,6 +319,9 @@ namespace mips_emulator {
             fpu_ttype.zero = 0;
         }
 
+        // raw
+        Instruction(const uint32_t value) { raw = value; }
+
         // Special3 R-Type
         Instruction(const Special3Func func, const Special3RTypeOp op,
                     const RegisterName rd, const RegisterName rt) {

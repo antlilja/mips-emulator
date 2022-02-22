@@ -152,6 +152,22 @@ TEST_CASE("aui", "[Executor]") {
     }
 }
 
+TEST_CASE("auipc", "[Executor]") {
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_pc(0x80085);
+
+        Instruction instr(IOp::e_auipc, RegisterName::e_t1, reg_file.get_pc(),
+                          0xbeef);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xbef70085);
+    }
+}
+
 TEST_CASE("sll", "[Executor]") {
     SECTION("Shift number") {
         using Address = typename RegisterFile::Unsigned;

@@ -205,7 +205,7 @@ namespace mips_emulator {
                 }
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rs,
-                                          reg_file.get_pc() + instr.itype.imm << 16);
+                                          reg_file.get_pc() + (instr.itype.imm << 16));
                     break;
                 }
                 case IOp::e_aui: {
@@ -215,7 +215,7 @@ namespace mips_emulator {
                 }
                 case IOp::e_auipc: {
                     reg_file.set_unsigned(instr.itype.rt,
-                                          rs.u + sign_ext_imm(instr.itype.imm << 16));
+                                          rs.u + (instr.itype.imm << 16));
                     break;
                 }
                 case IOp::e_slti: {

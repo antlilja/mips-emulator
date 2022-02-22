@@ -348,7 +348,20 @@ namespace mips_emulator {
                                               ((rt.u & 0xFF000000) >> 8));
                     break;
                 }
-
+                case ROp::e_seb: {
+                    // Sign-extend Byte
+                    reg_file.set_unsigned(instr.special3_rtype.rd,
+                                          (((~0) << 8) * ((rt.u >> 7) & 1)) |
+                                              (rt.u & 0xFF));
+                    break;
+                }
+                case ROp::e_seh: {
+                    // Sign-extend Halfword
+                    reg_file.set_unsigned(instr.special3_rtype.rd,
+                                          (((~0) << 16) * ((rt.u >> 15) & 1)) |
+                                              (rt.u & 0xFFFF));
+                    break;
+                }
                 default: return false;
             }
 

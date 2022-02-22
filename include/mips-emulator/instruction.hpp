@@ -165,6 +165,8 @@ namespace mips_emulator {
         // the func field
         enum class Special3RTypeOp : uint8_t {
             e_wsbh = 0b00010,
+            e_seh = 0b11000,
+            e_seb = 0b10000,
         };
 
         PACKED(struct General {

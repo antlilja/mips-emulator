@@ -83,7 +83,7 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_jr: {
-                    reg_file.set_pc(rs.u);
+                    reg_file.delayed_branch(rs.u);
                     break;
                 }
                 case Func::e_slt: {
@@ -95,8 +95,9 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_jalr: {
-                    reg_file.set_unsigned(31, reg_file.get_pc());
-                    reg_file.set_pc(rs.u);
+                    reg_file.set_unsigned(RegisterName::e_ra,
+                                          reg_file.get_pc() + 4);
+                    reg_file.delayed_branch(rs.u);
                     break;
                 }
                 case Func::e_sll: {

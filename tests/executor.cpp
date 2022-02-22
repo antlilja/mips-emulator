@@ -456,6 +456,45 @@ TEST_CASE("jal", "[Executor]") {
     }
 }
 
+TEST_CASE("jr", "[Executor]") {
+
+    using Unsigned = typename RegisterFile::Unsigned;
+    RegisterFile reg_file;
+    reg_file.set_unsigned(RegisterName::e_t0, 0xbad);
+
+    reg_file.set_pc(0x10000000);
+
+    Instruction instr(Func::e_jr, RegisterName::e_0, RegisterName::e_t0,
+                      RegisterName::e_0);
+
+    const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+    REQUIRE(no_error);
+
+    reg_file.update_pc(); // moves past delays slot
+
+    REQUIRE(reg_file.get_pc() == 0xbad);
+}
+
+TEST_CASE("jalr", "[Executor]") {
+
+    using Unsigned = typename RegisterFile::Unsigned;
+    RegisterFile reg_file;
+    reg_file.set_unsigned(RegisterName::e_t0, 0xbad);
+
+    reg_file.set_pc(0x10beef00);
+
+    Instruction instr(Func::e_jalr, RegisterName::e_0, RegisterName::e_t0,
+                      RegisterName::e_0);
+
+    const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+    REQUIRE(no_error);
+
+    reg_file.update_pc(); // moves past delays slot
+
+    REQUIRE(reg_file.get_pc() == 0xbad);
+    REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x10beef04);
+}
+
 TEST_CASE("wsbh", "[Executor]") {
     using R = Instruction::Special3Func;
     using ROp = Instruction::Special3RTypeOp;

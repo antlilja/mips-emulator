@@ -166,6 +166,8 @@ namespace mips_emulator {
         enum class Special3RTypeOp : uint8_t {
             e_bitswap = 0,
             e_wsbh = 0b00010,
+            e_seh = 0b11000,
+            e_seb = 0b10000,
         };
 
         PACKED(struct General {

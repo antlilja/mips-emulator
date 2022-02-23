@@ -169,7 +169,8 @@ namespace mips_emulator {
             return true;
         }
 
-        const uint32_t sign_ext_imm(const uint32_t imm) {
+        template <typename T>
+        const uint32_t sign_ext_imm(const T imm) {
             const uint32_t ext = (~0U) << 16;
             return ((ext * ((imm >> 15) & 1)) | imm);
         }

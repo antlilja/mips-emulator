@@ -212,12 +212,19 @@ TEST_CASE("Special3 R Type", "[Instruction]") {
     using ROp = Instruction::Special3RTypeOp;
 
     SECTION("get_type") {
-        ROp instr[] = {ROp::e_wsbh, ROp::e_seb, ROp::e_seh};
+        ROp instr[] = {ROp::e_bitswap, ROp::e_wsbh, ROp::e_seb, ROp::e_seh};
+
         for (auto const v : instr) {
             const auto inst = Instruction(R::e_bshfl, v, RegisterName::e_t0,
                                           RegisterName::e_t1);
             REQUIRE(inst.get_type() == Type::e_special3_rtype);
         }
+    }
+
+    SECTION("bitswap $t0 $t1") {
+        Instruction t(R::e_bshfl, ROp::e_bitswap, RegisterName::e_t0,
+                      RegisterName::e_t1);
+        REQUIRE(t.raw == 0x7C094020);
     }
 
     SECTION("wsbh $t0 $t1") {

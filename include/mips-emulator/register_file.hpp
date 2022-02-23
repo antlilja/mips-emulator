@@ -77,6 +77,7 @@ namespace mips_emulator {
         void update_pc() noexcept {
             inc_pc();
             pc += branch_flag * (branch_target - pc);
+            branch_flag = false;
         }
 
     private:

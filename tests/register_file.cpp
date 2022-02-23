@@ -110,5 +110,10 @@ TEST_CASE("update pc", "[Executor]") {
         reg_file.update_pc();
 
         REQUIRE(reg_file.get_pc() == 0xdad);
+
+        // test that the branch_flag was reset
+        reg_file.update_pc();
+
+        REQUIRE(reg_file.get_pc() == 0xdb1);
     }
 }

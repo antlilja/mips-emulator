@@ -83,7 +83,7 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_jr: {
-                    reg_file.set_pc(rs.u);
+                    reg_file.delayed_branch(rs.u);
                     break;
                 }
                 case Func::e_slt: {
@@ -95,8 +95,9 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_jalr: {
-                    reg_file.set_unsigned(31, reg_file.get_pc());
-                    reg_file.set_pc(rs.u);
+                    reg_file.set_unsigned(RegisterName::e_ra,
+                                          reg_file.get_pc() + 4);
+                    reg_file.delayed_branch(rs.u);
                     break;
                 }
                 case Func::e_sll: {
@@ -133,7 +134,7 @@ namespace mips_emulator {
                     const auto reg_bit_size =
                         (sizeof(RegisterFile::Unsigned) * 8);
                     const RegisterFile::Unsigned ext =
-                        (~0) << reg_bit_size - shift_amount;
+                        (~0) << (reg_bit_size - shift_amount);
                     reg_file.set_unsigned(
                         instr.rtype.rd,
                         (ext * ((rt.u >> (reg_bit_size - 1)) & 1)) |
@@ -145,7 +146,7 @@ namespace mips_emulator {
 
                     // ROTR: Rotate word if rs field & 1.
                     if (instr.rtype.rs & 1)
-                        res |= (rt.u << 32 - instr.rtype.shamt);
+                        res |= (rt.u << (32 - instr.rtype.shamt));
 
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
@@ -157,7 +158,7 @@ namespace mips_emulator {
                     auto res = rt.u >> shift;
 
                     // ROTRV: Rotate word if shamt & 1.
-                    if (instr.rtype.shamt & 1) res |= (rt.u << 32 - shift);
+                    if (instr.rtype.shamt & 1) res |= (rt.u << (32 - shift));
 
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
@@ -186,17 +187,17 @@ namespace mips_emulator {
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.set_pc(reg_file.get_pc() +
-                                        (sign_ext_imm(instr.itype.imm) * 4) +
-                                        4);
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() + 4 +
+                            (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
-                        reg_file.set_pc(reg_file.get_pc() +
-                                        (sign_ext_imm(instr.itype.imm) * 4) +
-                                        4);
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() + 4 +
+                            (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
                 }
@@ -208,6 +209,12 @@ namespace mips_emulator {
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u + sign_ext_imm(instr.itype.imm));
+                    break;
+                }
+                case IOp::e_aui: {
+                    reg_file.set_unsigned(
+                        instr.itype.rt,
+                        rs.u + sign_ext_imm(instr.itype.imm << 16));
                     break;
                 }
                 case IOp::e_slti: {
@@ -235,12 +242,6 @@ namespace mips_emulator {
                 case IOp::e_xori: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u ^ instr.itype.imm);
-                    break;
-                }
-                case IOp::e_lui: {
-                    reg_file.set_unsigned(
-                        instr.itype.rt,
-                        (RegisterFile::Unsigned)instr.itype.imm << 16);
                     break;
                 }
 
@@ -309,16 +310,15 @@ namespace mips_emulator {
                                 (Address)(reg_file.get_pc() & (0xf << 28));
 
             const JOp op = static_cast<JOp>(instr.jtype.op);
-
             switch (op) {
                 case JOp::e_j: {
-                    reg_file.set_pc(jta);
+                    reg_file.delayed_branch(jta);
                     break;
                 }
                 case JOp::e_jal: {
                     reg_file.set_unsigned(RegisterName::e_ra,
                                           reg_file.get_pc() + 4);
-                    reg_file.set_pc(jta);
+                    reg_file.delayed_branch(jta);
                     break;
                 }
 
@@ -373,10 +373,13 @@ namespace mips_emulator {
                                               Memory& memory) {
             using Type = Instruction::Type;
 
-            const Instruction instr =
-                memory.template read<Instruction>(reg_file.get_pc());
+            auto read_result =
+                memory.template read<uint32_t>(reg_file.get_pc());
 
-            reg_file.inc_pc();
+            if (read_result.is_error()) return false;
+            const auto instr = Instruction(read_result.get_value());
+
+            reg_file.update_pc();
 
             switch (instr.get_type()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);

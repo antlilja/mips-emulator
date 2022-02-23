@@ -100,6 +100,7 @@ namespace mips_emulator {
             e_bne = 5,
             e_addi = 8,
             e_addiu = 9,
+            e_aui = 15,
             e_slti = 10,
             e_sltiu = 11,
             e_andi = 12,
@@ -107,7 +108,6 @@ namespace mips_emulator {
             e_xori = 14,
             e_lb = 32,
             e_lbu = 36,
-            e_lui = 15,
             e_lw = 35,
             e_sb = 40,
             e_sw = 43,
@@ -320,6 +320,9 @@ namespace mips_emulator {
             fpu_ttype.fs = fs & 31;
             fpu_ttype.zero = 0;
         }
+
+        // raw
+        Instruction(const uint32_t value) { raw = value; }
 
         // Special3 R-Type
         Instruction(const Special3Func func, const Special3RTypeOp op,

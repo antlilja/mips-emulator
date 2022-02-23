@@ -6,8 +6,7 @@
 
 using namespace mips_emulator;
 
-TEST_CASE("Default initialization is zero initalized",
-                   "[RegisterFile]") {
+TEST_CASE("Default initialization is zero initalized", "[RegisterFile]") {
     RegisterFile state;
     for (int i = 0; i < RegisterFile::REGISTER_COUNT; ++i)
         REQUIRE(state.get(i).u == 0);
@@ -94,4 +93,27 @@ TEST_CASE("Register $0 is always zero", "[RegisterFile]") {
 
     reg_file.set_signed(0, -5);
     REQUIRE(reg_file.get(0).u == 0);
+}
+
+TEST_CASE("update pc", "[Executor]") {
+    RegisterFile reg_file;
+    reg_file.set_pc(0);
+
+    SECTION("increment") {
+        reg_file.update_pc();
+
+        REQUIRE(reg_file.get_pc() == 4);
+    }
+
+    SECTION("branch") {
+        reg_file.delayed_branch(0xdad);
+        reg_file.update_pc();
+
+        REQUIRE(reg_file.get_pc() == 0xdad);
+
+        // test that the branch_flag was reset
+        reg_file.update_pc();
+
+        REQUIRE(reg_file.get_pc() == 0xdb1);
+    }
 }

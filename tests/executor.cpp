@@ -93,10 +93,11 @@ TEST_CASE("beq", "[Executor]") {
         Instruction instr(IOp::e_beq, RegisterName::e_t0, RegisterName::e_t1,
                           16);
 
+        reg_file.inc_pc();  // emulate step
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
-        REQUIRE(reg_file.get_pc() == 0);
+        REQUIRE(reg_file.get_pc() == 4);
 
         reg_file.update_pc(); // moves past delays slot
 
@@ -112,14 +113,15 @@ TEST_CASE("beq", "[Executor]") {
         Instruction instr(IOp::e_beq, RegisterName::e_t0, RegisterName::e_t1,
                           16);
 
+        reg_file.inc_pc();  // emulate step
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
-        REQUIRE(reg_file.get_pc() == 0);
+        REQUIRE(reg_file.get_pc() == 4);
 
         reg_file.update_pc(); // moves past delays slot
 
-        REQUIRE(reg_file.get_pc() == 4);
+        REQUIRE(reg_file.get_pc() == 8);
     }
 }
 
@@ -134,10 +136,11 @@ TEST_CASE("bne", "[Executor]") {
         Instruction instr(IOp::e_bne, RegisterName::e_t0, RegisterName::e_t1,
                           16);
 
+        reg_file.inc_pc();  // Emulate step
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
-        REQUIRE(reg_file.get_pc() == 0);
+        REQUIRE(reg_file.get_pc() == 4);
 
         reg_file.update_pc(); // moves past delays slot
 
@@ -154,14 +157,15 @@ TEST_CASE("bne", "[Executor]") {
         Instruction instr(IOp::e_bne, RegisterName::e_t0, RegisterName::e_t1,
                           16);
 
+        reg_file.inc_pc();  // Emulate step
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
-        REQUIRE(reg_file.get_pc() == 0);
+        REQUIRE(reg_file.get_pc() == 4);
 
         reg_file.update_pc(); // moves past delays slot
 
-        REQUIRE(reg_file.get_pc() == 4);
+        REQUIRE(reg_file.get_pc() == 8);
     }
 }
 
@@ -476,6 +480,7 @@ TEST_CASE("j", "[Executor]") {
 
         Instruction instr(JOp::e_j, 0x003fc);
 
+        reg_file.inc_pc();  // emulate step
         const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
         REQUIRE(no_error);
 
@@ -493,6 +498,7 @@ TEST_CASE("jal", "[Executor]") {
 
         Instruction instr(JOp::e_jal, 0x003fc);
 
+        reg_file.update_pc(); // emulate step
         const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
         REQUIRE(no_error);
 
@@ -514,6 +520,7 @@ TEST_CASE("jr", "[Executor]") {
     Instruction instr(Func::e_jr, RegisterName::e_0, RegisterName::e_t0,
                       RegisterName::e_0);
 
+    reg_file.update_pc(); // emulate step
     const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
     REQUIRE(no_error);
 
@@ -533,6 +540,7 @@ TEST_CASE("jalr", "[Executor]") {
     Instruction instr(Func::e_jalr, RegisterName::e_0, RegisterName::e_t0,
                       RegisterName::e_0);
 
+    reg_file.update_pc(); // emulate step
     const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
     REQUIRE(no_error);
 

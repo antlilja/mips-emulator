@@ -96,7 +96,7 @@ namespace mips_emulator {
                 }
                 case Func::e_jalr: {
                     reg_file.set_unsigned(RegisterName::e_ra,
-                                          reg_file.get_pc() + 4);
+                                          reg_file.get_pc());
                     reg_file.delayed_branch(rs.u);
                     break;
                 }
@@ -189,7 +189,7 @@ namespace mips_emulator {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
                         reg_file.delayed_branch(
-                            reg_file.get_pc() + 4 +
+                            reg_file.get_pc() +
                             (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
@@ -197,7 +197,7 @@ namespace mips_emulator {
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
                         reg_file.delayed_branch(
-                            reg_file.get_pc() + 4 +
+                            reg_file.get_pc() +
                             (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
@@ -335,7 +335,7 @@ namespace mips_emulator {
                 }
                 case JOp::e_jal: {
                     reg_file.set_unsigned(RegisterName::e_ra,
-                                          reg_file.get_pc() + 4);
+                                          reg_file.get_pc());
                     reg_file.delayed_branch(jta);
                     break;
                 }

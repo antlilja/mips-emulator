@@ -766,7 +766,7 @@ TEST_CASE("load instructions", "[Executor]") {
     Result v = memory.template store<uint32_t>(4, (uint32_t)0x80222280);
     REQUIRE(!v.is_error());
 
-    SECTION("byte unsigned") {
+    SECTION("byte positive") {
         RegisterFile reg_file;
         reg_file.set_unsigned(RegisterName::e_t0, 4);
 
@@ -779,7 +779,7 @@ TEST_CASE("load instructions", "[Executor]") {
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x22);
     }
 
-    SECTION("byte signed") {
+    SECTION("byte negative") {
         RegisterFile reg_file;
         reg_file.set_unsigned(RegisterName::e_t0, 4);
 
@@ -792,7 +792,7 @@ TEST_CASE("load instructions", "[Executor]") {
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFFFF80);
     }
 
-    SECTION("halfword unsigned") {
+    SECTION("halfword positive") {
         RegisterFile reg_file;
         reg_file.set_unsigned(RegisterName::e_t0, 4);
 
@@ -803,6 +803,47 @@ TEST_CASE("load instructions", "[Executor]") {
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x2280);
+    }
+
+    SECTION("halfword negative") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lh, RegisterName::e_t1, RegisterName::e_t0, 2);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFF8022);
+    }
+
+    SECTION("halfword unsigned (lhu)") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lhu, RegisterName::e_t1, RegisterName::e_t0,
+                          2);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x00008022);
+    }
+
+    SECTION("byte unsigned (lbu)") {
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 4);
+
+        Instruction instr(IOp::e_lbu, RegisterName::e_t1, RegisterName::e_t0,
+                          0);
+
+        const bool no_error =
+            Executor::handle_itype_instr(instr, reg_file, memory);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x80);
     }
 
     SECTION("word neg offset") {

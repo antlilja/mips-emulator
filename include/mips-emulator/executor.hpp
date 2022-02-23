@@ -284,11 +284,28 @@ namespace mips_emulator {
                 return true;
             };
 
+            const auto load_val_unsigned = [&](auto a) {
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                auto read_result = memory.template read<decltype(a)>(address);
+
+                if (read_result.is_error()) return false;
+
+                reg_file.set_unsigned(
+                    instr.itype.rt,
+                    static_cast<uint32_t>(read_result.get_value()));
+
+                return true;
+            };
+
             switch (op) {
                 // Use signed int to automatically byte extend
                 case IOp::e_lb: return load_val((int8_t)0);
                 case IOp::e_lh: return load_val((int16_t)0);
                 case IOp::e_lw: return load_val((int32_t)0);
+
+                case IOp::e_lbu: return load_val_unsigned((uint8_t)0);
+                case IOp::e_lhu: return load_val_unsigned((uint16_t)0);
+
                 case IOp::e_sb: return store_val((uint8_t)rt.u);
                 case IOp::e_sh: return store_val((uint16_t)rt.u);
                 case IOp::e_sw: return store_val(rt.u);

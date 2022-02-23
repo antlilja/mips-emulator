@@ -112,6 +112,7 @@ namespace mips_emulator {
             e_sb = 40,
             e_sw = 43,
             e_lh = 0b100001,
+            e_lhu = 0b100101,
             e_sh = 0b101001,
         };
 

@@ -419,6 +419,8 @@ namespace mips_emulator {
                 }
                 case Type::e_special3_rtype:
                     return handle_special3_rtype_instr(instr, reg_file);
+
+                default: return false;
             }
         }
     }; // namespace Executor

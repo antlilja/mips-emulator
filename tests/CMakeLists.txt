@@ -14,7 +14,13 @@ add_executable(mips_emulator_tests
 	
 	register_file.cpp
 	instruction.cpp
+
+	# Executor
 	executor.cpp
+	executor/rtype.cpp
+	executor/itype.cpp
+	executor/jtype.cpp
+	executor/special3.cpp
 )
 
 target_link_libraries(mips_emulator_tests

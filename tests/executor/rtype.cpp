@@ -537,3 +537,55 @@ TEST_CASE("sop31", "[Executor]") {
         }
     }
 }
+
+TEST_CASE("sel", "[Executor]") {
+    SECTION("rt = 0") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 10);
+        reg_file.set_unsigned(RegisterName::e_t1, 0);
+
+        SECTION("eqz") {
+            Instruction instr(Func::e_seleqz, RegisterName::e_t2,
+                              RegisterName::e_t0, RegisterName::e_t1);
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t2).u == 10);
+        }
+
+        SECTION("nez") {
+            Instruction instr(Func::e_selnez, RegisterName::e_t2,
+                              RegisterName::e_t0, RegisterName::e_t1);
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t2).u == 0);
+        }
+    }
+
+    SECTION("rt != 0") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 10);
+        reg_file.set_unsigned(RegisterName::e_t1, 3);
+
+        SECTION("eqz") {
+            Instruction instr(Func::e_seleqz, RegisterName::e_t2,
+                              RegisterName::e_t0, RegisterName::e_t1);
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t2).u == 0);
+        }
+
+        SECTION("nez") {
+            Instruction instr(Func::e_selnez, RegisterName::e_t2,
+                              RegisterName::e_t0, RegisterName::e_t1);
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t2).u == 10);
+        }
+    }
+}

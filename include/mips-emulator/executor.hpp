@@ -163,6 +163,14 @@ namespace mips_emulator {
                     reg_file.set_unsigned(instr.rtype.rd, res);
                     break;
                 }
+                case Func::e_seleqz: {
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u ? 0 : rs.u);
+                    break;
+                }
+                case Func::e_selnez: {
+                    reg_file.set_unsigned(instr.rtype.rd, rt.u ? rs.u : 0);
+                    break;
+                }
                 default: return false;
             }
 

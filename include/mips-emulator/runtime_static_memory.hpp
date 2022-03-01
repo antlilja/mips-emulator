@@ -1,6 +1,8 @@
 #pragma once
 #include "mips-emulator/memory.hpp"
 
+#include <vector>
+
 namespace mips_emulator {
 
     template <typename MMIOHandler = NullMMIO>
@@ -11,13 +13,12 @@ namespace mips_emulator {
                             std::shared_ptr<MMIOHandler> mmio = nullptr)
             : Memory<RuntimeStaticMemory<MMIOHandler>, MMIOHandler>(
                   std::move(mmio)),
-              memory(new uint8_t[size]), size(size) {}
+              memory(size) {}
 
-        uint8_t* get_memory() { return memory; }
-        uint32_t get_size() const { return size; }
+        uint8_t* get_memory() { return &memory[0]; }
+        uint32_t get_size() const { return memory.size(); }
 
     private:
-        uint8_t* memory;
-        uint32_t size;
+        std::vector<uint8_t> memory;
     };
 } // namespace mips_emulator

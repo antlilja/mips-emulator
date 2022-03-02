@@ -230,7 +230,7 @@ namespace mips_emulator {
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.delayed_branch(
+                        reg_file.delayed_branch(    
                             reg_file.get_pc() +
                             (sign_ext_imm(instr.itype.imm) * 4));
                     }
@@ -244,6 +244,27 @@ namespace mips_emulator {
                     }
                     break;
                 }
+
+                case IOp::e_blez: {
+                    if (rs.s <= 0) {
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() +
+                            (sign_ext_imm(instr.itype.imm) * 4));
+
+                    }
+                    break;
+                }
+
+                case IOp::e_bgtz: {
+                    if (rs.u > 0) {
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() +
+                            (sign_ext_imm(instr.itype.imm) * 4)
+                        );
+                    }
+                    break;
+                }
+
                 case IOp::e_addi: {
                     reg_file.set_signed(instr.itype.rt,
                                         rs.s + sign_ext_imm(instr.itype.imm));
@@ -457,8 +478,15 @@ namespace mips_emulator {
             const Register rs = reg_file.get(instr.regimm_itype.rs);
 
             const IOp op = static_cast<IOp>(instr.regimm_itype.op);
-
             switch (op) {
+                case IOp::e_bgez: {
+                    if (rs.s >= 0) {
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() +
+                            (sign_ext_imm(instr.itype.imm) * 4));
+                    }
+                    break;
+                }
                 case IOp::e_bltz: {
                     if (rs.s < 0) {
                         reg_file.delayed_branch(

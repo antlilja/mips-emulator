@@ -307,6 +307,15 @@ namespace mips_emulator {
             itype.imm = immediate;
         }
 
+        // I-Type that doesnt take rt as input
+        Instruction(const ITypeOpcode opcode,
+                    const RegisterName rs, const uint16_t immediate) {
+            itype.op = static_cast<uint8_t>(opcode);
+            itype.rt = 0;
+            itype.rs = static_cast<uint8_t>(rs);
+            itype.imm = immediate;
+        }
+
         // J-Type
         Instruction(const JTypeOpcode opcode, const uint32_t address) {
             constexpr uint32_t MASK = (1 << 26) - 1;
@@ -369,6 +378,7 @@ namespace mips_emulator {
             regimm_itype.imm = immediate;
             regimm_itype.regimm = 1;
         }
+        
 
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {

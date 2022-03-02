@@ -92,10 +92,10 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
 TEST_CASE("I-Type instruction", "[Instruction]") {
 
     SECTION("get_type") {
-        IOp iops[] = {IOp::e_beq,  IOp::e_bne,   IOp::e_addi, IOp::e_addiu,
-                      IOp::e_slti, IOp::e_sltiu, IOp::e_andi, IOp::e_ori,
-                      IOp::e_xori, IOp::e_lb,    IOp::e_lbu,  IOp::e_lw,
-                      IOp::e_sb,   IOp::e_sw};
+        IOp iops[] = {IOp::e_beq,  IOp::e_bne,   IOp::e_bgtz, IOp::e_blez,
+                      IOp::e_addi, IOp::e_addiu, IOp::e_slti, IOp::e_sltiu,
+                      IOp::e_andi, IOp::e_ori,   IOp::e_xori, IOp::e_lb,    
+                      IOp::e_lbu,  IOp::e_lw,    IOp::e_sb,   IOp::e_sw};
 
         for (auto const i : iops) {
 
@@ -243,5 +243,30 @@ TEST_CASE("Special3 R Type", "[Instruction]") {
         Instruction t(R::e_bshfl, ROp::e_seh, RegisterName::e_t0,
                       RegisterName::e_t1);
         REQUIRE(t.raw == 0x7c094620);
+    }
+}
+
+TEST_CASE("Regimm I Type", "[Instruction]") {
+    using Type = Instruction::Type;
+    using I = Instruction::RegimmOpcode;
+    using IOp = Instruction::RegimmITypeOp;
+
+    SECTION("get_type") {
+        IOp instr[] = {IOp::e_bgez, IOp::e_bltz};
+
+        for (auto const v : instr) {
+            const auto inst = Instruction(v, RegisterName::e_t0, 3);
+            REQUIRE(inst.get_type() == Type::e_regimm_itype);
+        }
+    }
+
+    SECTION("bgez - zero register and positive immediate ") {
+        Instruction t(IOp::e_bgez, RegisterName::e_0, 12);
+        REQUIRE(t.raw == 0x401000c);
+    }
+
+    SECTION("bltz - positive register and immediate") {
+        Instruction t(IOp::e_bltz, RegisterName::e_t1, 8);
+        REQUIRE(t.raw == 0x5200008);
     }
 }

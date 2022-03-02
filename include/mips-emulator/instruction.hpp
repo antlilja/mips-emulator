@@ -100,7 +100,9 @@ namespace mips_emulator {
 
         enum class ITypeOpcode : uint8_t {
             e_beq = 4,
+            e_blez = 6,
             e_bne = 5,
+            e_bgtz = 7,
             e_addi = 8,
             e_addiu = 9,
             e_aui = 15,

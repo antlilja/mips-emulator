@@ -165,7 +165,7 @@ namespace mips_emulator {
         };
 
         // Opcode for regimm instruction
-        enum class e_RegimmOpcode : uint8_t {
+        enum class RegimmOpcode : uint8_t {
             e_regimm = 1,
         };
 
@@ -396,6 +396,11 @@ namespace mips_emulator {
                      static_cast<uint8_t>(Special3Opcode::e_special3)) {
                 // TODO, handle other types
                 return Type::e_special3_rtype;
+            }
+            else if (general.op ==
+                     static_cast<uint8_t>(RegimmOpcode::e_regimm)) {
+                // TODO, handle other types
+                return Type::e_regimm_itype;
             }
 
             switch (general.op & ~1) {

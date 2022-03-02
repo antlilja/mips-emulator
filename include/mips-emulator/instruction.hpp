@@ -31,6 +31,7 @@ namespace mips_emulator {
             e_fpu_btype,
             e_fpu_ttype,
             e_special3_rtype,
+            e_regimm_itype,
         };
 
         enum class Func : uint8_t {
@@ -159,13 +160,20 @@ namespace mips_emulator {
             e_special3 = 0b011111,
         };
 
+        // Opcode for regimm instruction
+        enum class e_RegimmOpcode : uint8_t {
+            e_regimm = 1,
+        };
+
         // Func enum for special3 instructions
         enum class Special3Func : uint8_t { e_bshfl = 0b100000 };
 
-        // Opcode enum for special3 r-type like instructions
-        // Calling them R-type due to lack of better name
-        // Special3 instructions have a bunch of different layouts depending on
-        // the func field
+        // regimm function types are dependent on value in bits 16 to 20
+        enum class RegimmITypeOp : uint8_t {
+            e_bgez = 1,
+            e_bltz = 0,
+        };
+
         enum class Special3RTypeOp : uint8_t {
             e_bitswap = 0,
             e_wsbh = 0b00010,
@@ -244,6 +252,16 @@ namespace mips_emulator {
             uint32_t special3 : 6;
         });
 
+        // regimm structs
+        // similar to itype instructions but all share the same op-code
+        // function type is determined by bits 16-20
+        PACKED(struct RegimmIType {
+            uint32_t imm : 16;
+            uint32_t op : 5;
+            uint32_t rs : 5;
+            uint32_t regimm : 6;
+        });
+
         // Make sure internal structs are the same size
         static_assert(sizeof(General) == 4,
                       "Instruction::General bitfield is not 4 bytes in size");
@@ -262,6 +280,9 @@ namespace mips_emulator {
         static_assert(
             sizeof(Special3RType) == 4,
             "Instruction::Special3RType bitfield is not 4 bytes in size");
+        static_assert(
+            sizeof(RegimmIType) == 4,
+            "Instruction::RegimmIType bitfield is not 4 bytes in size");
 
         // R-Type
         Instruction(const Func func, const RegisterName rd,
@@ -340,6 +361,15 @@ namespace mips_emulator {
                 static_cast<uint8_t>(Special3Opcode::e_special3);
         }
 
+        // Regimm I-Type
+        Instruction(const RegimmITypeOp opcode, const RegisterName rs,
+                    const uint16_t immediate) {
+            regimm_itype.op = static_cast<uint8_t>(opcode);
+            regimm_itype.rs = static_cast<uint8_t>(rs);
+            regimm_itype.imm = immediate;
+            regimm_itype.regimm = 1;
+        }
+
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {
                 if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
@@ -373,6 +403,9 @@ namespace mips_emulator {
         FPUBType fpu_btype;
 
         Special3RType special3_rtype;
+
+        RegimmIType regimm_itype;
+
     }; // namespace mips_emulator
 
     // Make sure Instruction union matches the MIPS instruction size

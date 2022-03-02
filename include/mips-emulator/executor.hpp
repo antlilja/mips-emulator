@@ -413,6 +413,33 @@ namespace mips_emulator {
             return true;
         }
 
+        [[nodiscard]] inline static bool
+        handle_regimm_itype_instr(const Instruction instr,
+                                  RegisterFile& reg_file) {
+
+            using Register = RegisterFile::Register;
+            using IOp = Instruction::RegimmITypeOp;
+
+            const Register rs = reg_file.get(instr.regimm_itype.rs);
+
+            const IOp op = static_cast<IOp>(instr.regimm_itype.op);
+
+            switch (op) {
+                case IOp::e_bltz: {
+                    if (rs.s < 0) {
+                        reg_file.delayed_branch(
+                            reg_file.get_pc() +
+                            (sign_ext_imm(instr.itype.imm) * 4));
+                    }
+                    break;
+                }
+
+                default: return false;
+            }
+
+            return true;
+        }
+
         template <typename Memory>
         [[nodiscard]] inline static bool step(RegisterFile& reg_file,
                                               Memory& memory) {
@@ -445,6 +472,8 @@ namespace mips_emulator {
                 }
                 case Type::e_special3_rtype:
                     return handle_special3_rtype_instr(instr, reg_file);
+                case Type::e_regimm_itype:
+                    return handle_regimm_itype_instr(instr, reg_file);
 
                 default: return false;
             }

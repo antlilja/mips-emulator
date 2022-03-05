@@ -27,6 +27,37 @@ TEST_CASE("addi", "[Executor]") {
     }
 }
 
+TEST_CASE("addiu", "[Executor]") {
+    // "Simple" might be a better name, but let's stick with convention
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 123456);
+
+        Instruction instr(IOp::e_addiu, RegisterName::e_t1, RegisterName::e_t0,
+                          333);
+        
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 123789);
+    }
+    // No overflow-errors ever - it's 32-bit modulo
+    SECTION("No overflow error") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX-1);
+
+        Instruction instr(IOp::e_addiu, RegisterName::e_t1, RegisterName::e_t0,
+                          15);
+        
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t1).u == 13);
+    }
+}
+
 TEST_CASE("andi", "[Executor]") {
     SECTION("Positive numbers") {
         using Address = typename RegisterFile::Unsigned;

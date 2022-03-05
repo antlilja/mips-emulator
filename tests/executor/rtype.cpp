@@ -27,6 +27,39 @@ TEST_CASE("add", "[Executor]") {
     }
 }
 
+TEST_CASE("addu", "[Executor]") {
+    // "Simple" might be a better name, but let's stick with convention
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 2);
+        reg_file.set_unsigned(RegisterName::e_t1, 8);
+
+        Instruction instr(Func::e_addu, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 10);
+    }
+    // No overflow-errors ever - it's 32-bit modulo
+    SECTION("No overflow error") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX-1);
+        reg_file.set_unsigned(RegisterName::e_t1, 2);
+
+        Instruction instr(Func::e_addu, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 0);
+    }
+}
+
 TEST_CASE("sub", "[Executor]") {
     SECTION("Positive numbers") {
         using Address = typename RegisterFile::Unsigned;
@@ -62,13 +95,64 @@ TEST_CASE("sub", "[Executor]") {
     }
 }
 
+TEST_CASE("subu", "[Executor]") {
+    // "Simple" might be a better name, but let's stick with convention
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 18);
+        reg_file.set_unsigned(RegisterName::e_t1, 4);
+
+        Instruction instr(Func::e_subu, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 14);
+    }
+    // No overflow-errors ever - it's 32-bit modulo
+    SECTION("No overflow error") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+        reg_file.set_unsigned(RegisterName::e_t1, UINT32_MAX);
+
+        Instruction instr(Func::e_subu, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 1); // Is that how the subtraction works?
+    }
+}
+
+TEST_CASE("and", "[Executor]") {
+    // "Simple" might be a better name, but let's stick with convention
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1010);
+        reg_file.set_unsigned(RegisterName::e_t1, 0b1001);
+
+        Instruction instr(Func::e_and, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b1000);
+    }
+}
+
 TEST_CASE("or", "[Executor]") {
     SECTION("Positive numbers") {
         using Address = typename RegisterFile::Unsigned;
         RegisterFile reg_file;
 
-        reg_file.set_unsigned(RegisterName::e_t0, 0b1);   // 1
-        reg_file.set_unsigned(RegisterName::e_t1, 0b110); // 6
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1010);
+        reg_file.set_unsigned(RegisterName::e_t1, 0b1001);
 
         Instruction instr(Func::e_or, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
@@ -76,7 +160,41 @@ TEST_CASE("or", "[Executor]") {
         const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
         REQUIRE(no_error);
 
-        REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b111); // 7
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b1011);
+    }
+}
+
+TEST_CASE("nor", "[Executor]") {
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1010);
+        reg_file.set_unsigned(RegisterName::e_t1, 0b1001);
+
+        Instruction instr(Func::e_nor, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == ((0xfffffff0) | (0b0100)));
+    }
+}
+
+TEST_CASE("xor", "[Executor]") {
+    SECTION("Positive numbers") {
+        using Address = typename RegisterFile::Unsigned;
+        RegisterFile reg_file;
+        reg_file.set_unsigned(RegisterName::e_t0, 0b1010);
+        reg_file.set_unsigned(RegisterName::e_t1, 0b1001);
+
+        Instruction instr(Func::e_xor, RegisterName::e_t2, RegisterName::e_t0,
+                          RegisterName::e_t1);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b0011);
     }
 }
 
@@ -535,6 +653,96 @@ TEST_CASE("sop31", "[Executor]") {
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == res);
         }
+    }
+}
+
+TEST_CASE("sop32") {
+    SECTION("DIV negative result") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, 11);
+        reg_file.set_signed(RegisterName::e_t1, -2);
+
+        Instruction instr(Func::e_sop32, RegisterName::e_t3,
+                          RegisterName::e_t0, RegisterName::e_t1, 2);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t3).s == -5);
+    }
+    SECTION("DIV positive result") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, -11);
+        reg_file.set_signed(RegisterName::e_t1, -2);
+
+        Instruction instr(Func::e_sop32, RegisterName::e_t3,
+                          RegisterName::e_t0, RegisterName::e_t1, 2);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t3).s == 5);
+    }
+    SECTION("MOD negative result") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, -11);
+        reg_file.set_signed(RegisterName::e_t1, 2);
+
+        Instruction instr(Func::e_sop32, RegisterName::e_t3,
+                          RegisterName::e_t0, RegisterName::e_t1, 3);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t3).s == -1);
+    }
+    SECTION("MOD positive result") {
+        RegisterFile reg_file;
+
+        reg_file.set_signed(RegisterName::e_t0, 11);
+        reg_file.set_signed(RegisterName::e_t1, -2);
+
+        Instruction instr(Func::e_sop32, RegisterName::e_t3,
+                          RegisterName::e_t0, RegisterName::e_t1, 3);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t3).s == 1);
+    }
+}
+
+TEST_CASE("sop33") {
+    SECTION("DIVU") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 11);
+        reg_file.set_unsigned(RegisterName::e_t1, 2);
+
+        Instruction instr(Func::e_sop33, RegisterName::e_t3,
+                          RegisterName::e_t0, RegisterName::e_t1, 2);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t3).s == 5);
+    }
+    SECTION("MODU") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 11);
+        reg_file.set_unsigned(RegisterName::e_t1, 2);
+
+        Instruction instr(Func::e_sop33, RegisterName::e_t3,
+                          RegisterName::e_t0, RegisterName::e_t1, 3);
+        
+        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get(RegisterName::e_t3).s == 1);
     }
 }
 

@@ -59,10 +59,16 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_sop32: { // Shamt: 2 = div, 3 = mod
+                    // division by zero check
+                    if (rt.s == 0) return false;
+
                     sop_set_rd(rs.s / rt.s, rs.s % rt.s);
                     break;
                 }
                 case Func::e_sop33: { // Shamt: 2 = divu, 3 = modu
+                    // division by zero check
+                    if (rt.s == 0) return false;
+
                     sop_set_rd(rs.u / rt.u, rs.u % rt.u);
                     break;
                 }

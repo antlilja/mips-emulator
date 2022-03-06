@@ -589,3 +589,49 @@ TEST_CASE("sel", "[Executor]") {
         }
     }
 }
+
+TEST_CASE("clz", "[Executor]") {
+    SECTION("tests") {
+        uint32_t cases[][2] = {{0, 32},          {UINT32_MAX, 0},
+                               {0x0FFFFFFF, 4},  {0x80000000, 0},
+                               {0x00003000, 18}, {0x1, 31}};
+
+        for (auto& test : cases) {
+            RegisterFile reg_file;
+
+            reg_file.set_unsigned(RegisterName::e_t0, 0);
+            reg_file.set_unsigned(RegisterName::e_t1, test[0]);
+
+            const Instruction instr(Func::e_clz, RegisterName::e_t0,
+                                    RegisterName::e_t1, RegisterName::e_0, 1);
+
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t0).u == test[1]);
+        }
+    }
+}
+
+TEST_CASE("clo", "[Executor]") {
+    SECTION("tests") {
+        uint32_t cases[][2] = {{0, 0},           {UINT32_MAX, 32},
+                               {0x0FFFFFFF, 0},  {0x80000000, 1},
+                               {0xFFFFC000, 18}, {0xFFFFFFFE, 31}};
+
+        for (auto& test : cases) {
+            RegisterFile reg_file;
+
+            reg_file.set_unsigned(RegisterName::e_t0, 0);
+            reg_file.set_unsigned(RegisterName::e_t1, test[0]);
+
+            const Instruction instr(Func::e_clo, RegisterName::e_t0,
+                                    RegisterName::e_t1, RegisterName::e_0, 1);
+
+            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t0).u == test[1]);
+        }
+    }
+}

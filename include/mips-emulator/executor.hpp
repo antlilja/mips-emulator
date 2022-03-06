@@ -230,7 +230,7 @@ namespace mips_emulator {
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.delayed_branch(    
+                        reg_file.delayed_branch(
                             reg_file.get_pc() +
                             (sign_ext_imm(instr.itype.imm) * 4));
                     }
@@ -250,17 +250,15 @@ namespace mips_emulator {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
                             (sign_ext_imm(instr.itype.imm) * 4));
-
                     }
                     break;
                 }
 
                 case IOp::e_bgtz: {
-                    if (rs.u > 0) {
+                    if (rs.s > 0) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4)
-                        );
+                            (sign_ext_imm(instr.itype.imm) * 4));
                     }
                     break;
                 }

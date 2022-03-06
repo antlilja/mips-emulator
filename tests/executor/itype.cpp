@@ -248,6 +248,156 @@ TEST_CASE("bne", "[Executor]") {
     }
 }
 
+// Branch on Less Than or Equal to Zero
+TEST_CASE("blez", "[Executor]") {
+    SECTION("Equal to 0 (Branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+
+        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 68);
+    }
+
+    SECTION("Not equal to 0 (Don't branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 1);
+
+        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 8);
+    }
+
+    SECTION("Largest positive immediate (dont branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 32767);
+
+        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 8);
+    }
+
+    SECTION("Smallest negative immediate (branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, -32768);
+
+        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 68);
+    }
+}
+
+// Branch on Greater Than Zero
+TEST_CASE("bgtz", "[Executor]") {
+    SECTION("Equal to 0 (Don't branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 0);
+
+        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 8);
+    }
+
+    SECTION("Greater than 0 (Branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 1);
+
+        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 68);
+    }
+
+    SECTION("Largest positive immediate (Branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, 32767);
+
+        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 68);
+    }
+
+    SECTION("Smallest negative immediate (Don't branch)") {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, -32768);
+
+        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
+
+        reg_file.inc_pc(); // Emulate step
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 4);
+
+        reg_file.update_pc(); // moves past delays slot
+
+        REQUIRE(reg_file.get_pc() == 8);
+    }
+}
+
 // Memory instructions
 TEST_CASE("load instructions", "[Executor]") {
     StaticMemory<256> memory;

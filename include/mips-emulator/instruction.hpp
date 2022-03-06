@@ -178,6 +178,10 @@ namespace mips_emulator {
             e_bltz = 0,
         };
 
+        // Opcode enum for special3 r-type like instructions
+        // Calling them R-type due to lack of better name
+        // Special3 instructions have a bunch of different layouts depending on
+        // the func field
         enum class Special3RTypeOp : uint8_t {
             e_bitswap = 0,
             e_wsbh = 0b00010,
@@ -312,8 +316,8 @@ namespace mips_emulator {
         }
 
         // I-Type that doesnt take rt as input
-        Instruction(const ITypeOpcode opcode,
-                    const RegisterName rs, const uint16_t immediate) {
+        Instruction(const ITypeOpcode opcode, const RegisterName rs,
+                    const uint16_t immediate) {
             itype.op = static_cast<uint8_t>(opcode);
             itype.rt = 0;
             itype.rs = static_cast<uint8_t>(rs);
@@ -382,7 +386,6 @@ namespace mips_emulator {
             regimm_itype.imm = immediate;
             regimm_itype.regimm = 1;
         }
-        
 
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {

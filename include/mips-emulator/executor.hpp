@@ -177,6 +177,34 @@ namespace mips_emulator {
                     reg_file.set_unsigned(instr.rtype.rd, rt.u ? rs.u : 0);
                     break;
                 }
+                case Func::e_clz: {
+                    // Counts the number of leading zeros
+                    auto x = rs.s;
+                    auto count = (x == 0) ? sizeof(x) * 8 : 0;
+                    // x is interpret as a two-complements number, so
+                    // negative means a leading one which means we're done.
+                    // x == 0 is handled above
+                    while (x > 0) {
+                        count++;
+                        x <<= 1;
+                    }
+                    reg_file.set_unsigned(instr.rtype.rd, count);
+                    break;
+                }
+                case Func::e_clo: {
+                    // Count the number of leading ones
+                    auto x = rs.s;
+                    auto count = 0;
+                    // x is interpret as a two-complements number, so
+                    // anything other than a negative number means we're done
+                    // counting.
+                    while (x < 0) {
+                        count++;
+                        x <<= 1;
+                    }
+                    reg_file.set_unsigned(instr.rtype.rd, count);
+                    break;
+                }
                 default: return false;
             }
 

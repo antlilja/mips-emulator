@@ -13,7 +13,8 @@ namespace mips_emulator {
 
     struct NullMMIO {};
 
-    template <typename MemoryImplemantion, typename MMIOHandler = NullMMIO>
+    template <typename MemoryImplemantion, typename MMIOHandler = NullMMIO,
+              bool aligned_access = false>
     class Memory {
     public:
         using Address = uint32_t;
@@ -29,7 +30,7 @@ namespace mips_emulator {
                           "Can't read larger than word size");
 
             // NOTE: Types of size 1 are always aligned
-            if constexpr (sizeof(T) > 1) {
+            if constexpr (sizeof(T) > 1 && aligned_access) {
                 if (!is_aligned<T>(address)) {
                     return MemoryError::unaligned_access;
                 }
@@ -56,7 +57,7 @@ namespace mips_emulator {
                           "Can't read larger than word size");
 
             // NOTE: Types of size 1 are always aligned
-            if constexpr (sizeof(T) > 1) {
+            if constexpr (sizeof(T) > 1 && aligned_access) {
                 if (!is_aligned<T>(address)) {
                     return MemoryError::unaligned_access;
                 }

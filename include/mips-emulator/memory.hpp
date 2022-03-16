@@ -19,7 +19,8 @@ namespace mips_emulator {
     public:
         using Address = uint32_t;
 
-        Memory(std::shared_ptr<MMIOHandler> mmio) : mmio(std::move(mmio)) {}
+        Memory(uint32_t offset, std::shared_ptr<MMIOHandler> mmio)
+            : offset(offset), mmio(std::move(mmio)) {}
 
         // NOTE:
         // This method is deliberately left as non-const because the
@@ -48,7 +49,8 @@ namespace mips_emulator {
             }
 
             return *reinterpret_cast<T*>(
-                static_cast<MemoryImplemantion*>(this)->get_memory() + address);
+                static_cast<MemoryImplemantion*>(this)->get_memory() + address -
+                offset);
         }
 
         template <typename T>
@@ -74,10 +76,19 @@ namespace mips_emulator {
             }
 
             *reinterpret_cast<T*>(
-                static_cast<MemoryImplemantion*>(this)->get_memory() +
-                address) = value;
+                static_cast<MemoryImplemantion*>(this)->get_memory() + address -
+                offset) = value;
 
             return {};
+        }
+
+        Result<void*, MemoryError> ptr_from_address(const Address address) {
+            if (!is_in_bounds<uint8_t>(address)) {
+                return MemoryError::out_of_bounds_access;
+            }
+
+            return static_cast<MemoryImplemantion*>(this)->get_memory() +
+                   address - offset;
         }
 
         Span<uint8_t> get_memory() {
@@ -95,11 +106,13 @@ namespace mips_emulator {
 
         template <typename T>
         inline bool is_in_bounds(const Address address) {
-            return (address + sizeof(T)) <
-                   static_cast<MemoryImplemantion*>(this)->get_size();
+            return (address - offset + sizeof(T)) <
+                       static_cast<MemoryImplemantion*>(this)->get_size() &&
+                   address >= offset;
         }
 
     protected:
+        uint32_t offset;
         std::shared_ptr<MMIOHandler> mmio;
     };
 } // namespace mips_emulator

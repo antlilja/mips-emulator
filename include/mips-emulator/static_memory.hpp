@@ -8,9 +8,10 @@ namespace mips_emulator {
     public:
         static_assert(SIZE != 0, "SIZE of StaticMemory can't be zero");
 
-        StaticMemory(std::shared_ptr<MMIOHandler> mmio_handler = nullptr)
+        StaticMemory(const uint32_t offset = 0,
+                     std::shared_ptr<MMIOHandler> mmio_handler = nullptr)
             : Memory<StaticMemory<SIZE, MMIOHandler>, MMIOHandler>(
-                  mmio_handler) {}
+                  offset, mmio_handler) {}
 
         uint8_t* get_memory() { return &memory[0]; }
         uint32_t get_size() const { return SIZE; }

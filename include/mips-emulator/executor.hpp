@@ -212,9 +212,9 @@ namespace mips_emulator {
         }
 
         template <typename T>
-        const uint32_t sign_ext_imm(const T imm) {
-            const uint32_t ext = (~0U) << 16;
-            return ((ext * ((imm >> 15) & 1)) | imm);
+        const uint32_t sign_ext_imm(const T imm, int shift) {
+            const uint32_t ext = (~0U) << shift;
+            return ((ext * ((imm >> (shift-1)) & 1)) | imm);
         }
 
         [[nodiscard]] inline static bool
@@ -232,7 +232,7 @@ namespace mips_emulator {
                     if (rt.u == rs.u) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            (sign_ext_imm(instr.itype.imm, 16) * 4));
                     }
                     break;
                 }
@@ -240,7 +240,7 @@ namespace mips_emulator {
                     if (rt.u != rs.u) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            (sign_ext_imm(instr.itype.imm, 16) * 4));
                     }
                     break;
                 }
@@ -249,7 +249,7 @@ namespace mips_emulator {
                     if (rs.s <= 0) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            (sign_ext_imm(instr.itype.imm, 16) * 4));
                     }
                     break;
                 }
@@ -258,37 +258,37 @@ namespace mips_emulator {
                     if (rs.s > 0) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            (sign_ext_imm(instr.itype.imm, 16) * 4));
                     }
                     break;
                 }
 
                 case IOp::e_addi: {
                     reg_file.set_signed(instr.itype.rt,
-                                        rs.s + sign_ext_imm(instr.itype.imm));
+                                        rs.s + sign_ext_imm(instr.itype.imm, 16));
                     break;
                 }
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rt,
-                                          rs.u + sign_ext_imm(instr.itype.imm));
+                                          rs.u + sign_ext_imm(instr.itype.imm, 16));
                     break;
                 }
                 case IOp::e_aui: {
                     reg_file.set_unsigned(
                         instr.itype.rt,
-                        rs.u + sign_ext_imm(instr.itype.imm << 16));
+                        rs.u + sign_ext_imm(instr.itype.imm << 16, 16));
                     break;
                 }
                 case IOp::e_slti: {
                     reg_file.set_unsigned(
                         instr.itype.rt,
                         rs.s < (RegisterFile::Signed)sign_ext_imm(
-                                   instr.itype.imm));
+                                   instr.itype.imm, 16));
                     break;
                 }
                 case IOp::e_sltiu: {
                     reg_file.set_unsigned(instr.itype.rt,
-                                          rs.u < sign_ext_imm(instr.itype.imm));
+                                          rs.u < sign_ext_imm(instr.itype.imm, 16));
                     break;
                 }
                 case IOp::e_andi: {
@@ -325,7 +325,7 @@ namespace mips_emulator {
             const IOp op = static_cast<IOp>(instr.itype.op);
 
             const auto store_val = [&](auto val) {
-                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm, 16);
                 auto store_result =
                     memory.template store<decltype(val)>(address, val);
 
@@ -334,7 +334,7 @@ namespace mips_emulator {
 
             // Use Unused Variable a for its type.
             const auto load_val = [&](auto a) {
-                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm, 16);
                 auto read_result = memory.template read<decltype(a)>(address);
 
                 if (read_result.is_error()) return false;
@@ -347,7 +347,7 @@ namespace mips_emulator {
             };
 
             const auto load_val_unsigned = [&](auto a) {
-                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
+                const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm, 16);
                 auto read_result = memory.template read<decltype(a)>(address);
 
                 if (read_result.is_error()) return false;
@@ -474,14 +474,14 @@ namespace mips_emulator {
             using IOp = Instruction::RegimmITypeOp;
 
             const Register rs = reg_file.get(instr.regimm_itype.rs);
-
             const IOp op = static_cast<IOp>(instr.regimm_itype.op);
+            
             switch (op) {
                 case IOp::e_bgez: {
                     if (rs.s >= 0) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            (sign_ext_imm(instr.itype.imm, 16) * 4));
                     }
                     break;
                 }
@@ -489,7 +489,7 @@ namespace mips_emulator {
                     if (rs.s < 0) {
                         reg_file.delayed_branch(
                             reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            (sign_ext_imm(instr.itype.imm, 16) * 4));
                     }
                     break;
                 }
@@ -498,6 +498,59 @@ namespace mips_emulator {
             }
 
             return true;
+        }
+
+        template <typename Memory>
+        [[nodiscard]] inline static bool
+        handle_pcrel_instr(const Instruction instr, RegisterFile& reg_file,
+                           Memory& memory) {
+            
+            using IOp = Instruction::PCrelITypeOp;
+            using Register = RegisterFile::Register;
+
+            const IOp op = static_cast<IOp>(instr.pcrel_itype.op);
+
+            // Use Unused Variable a for its type.
+            const auto load_val = [&](auto a) {
+                const uint32_t address = reg_file.get_pc() +
+                                         sign_ext_imm(instr.pcrel_itype.imm << 2, 19);
+                
+                auto read_result = memory.template read<decltype(a)>(address);
+
+                if (read_result.is_error()) return false;
+
+                reg_file.set_signed(
+                    instr.pcrel_itype.rs,
+                    static_cast<int32_t>(read_result.get_value()));
+
+                return true;
+            };
+
+            switch(op) {
+                case IOp::e_addiupc: {
+                    reg_file.set_unsigned(
+                        instr.pcrel_itype.rs,
+                        reg_file.get_pc() + sign_ext_imm(instr.pcrel_itype.imm << 2, 19));           
+                    break;
+                }
+                case IOp::e_lwpc: return load_val((int32_t)0);
+                case IOp::e_auipc: {
+                    reg_file.set_unsigned(
+                        instr.pcrel_itype.rs,
+                        reg_file.get_pc() + sign_ext_imm(instr.pcrel_itype.imm << 16, 16));           
+                    break;
+                }
+                case IOp::e_aluipc: {
+                    reg_file.set_unsigned(
+                        instr.pcrel_itype.rs,
+                        -0x0ffff & (reg_file.get_pc() +
+                        sign_ext_imm(instr.pcrel_itype.imm << 16, 16)));           
+                    break;
+                }
+                default: return false;
+            }
+
+            return true;              
         }
 
         template <typename Memory>
@@ -514,27 +567,34 @@ namespace mips_emulator {
             reg_file.update_pc();
 
             switch (instr.get_type()) {
-                case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
+                case Type::e_rtype:
+                    return handle_rtype_instr(instr, reg_file);
                 case Type::e_itype:
                     return handle_itype_instr(instr, reg_file, memory);
-                case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
-                case Type::e_fpu_rtype: {
+                case Type::e_jtype:
+                    return handle_jtype_instr(instr, reg_file);
+                
+                case Type::e_fpu_rtype:
                     // TODO: Handle FPU R-Type instructions
                     return false;
-                }
-                case Type::e_fpu_ttype: {
+                case Type::e_fpu_ttype:
                     // TODO: Handle FPU Transfer instructions
                     return false;
-                }
-                case Type::e_fpu_btype: {
+                case Type::e_fpu_btype:
                     // TODO: Handle FPU Brach instructions
                     return false;
-                }
+
                 case Type::e_special3_rtype:
                     return handle_special3_rtype_instr(instr, reg_file);
+                
                 case Type::e_regimm_itype:
                     return handle_regimm_itype_instr(instr, reg_file);
-
+                
+                case Type::e_pcrel_itype:
+                    return handle_pcrel_instr(instr, reg_file, memory);
+                case Type::e_pcrel_2bittype:
+                    return handle_pcrel_instr(instr, reg_file, memory);
+                
                 default: return false;
             }
         }

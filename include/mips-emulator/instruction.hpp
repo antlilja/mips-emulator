@@ -32,6 +32,8 @@ namespace mips_emulator {
             e_fpu_ttype,
             e_special3_rtype,
             e_regimm_itype,
+            e_pcrel_itype,
+            e_pcrel_2bittype,
         };
 
         enum class Func : uint8_t {
@@ -169,6 +171,11 @@ namespace mips_emulator {
             e_regimm = 1,
         };
 
+        // Opcode for pcrel instruction
+        enum class PCrelOpcode : uint8_t {
+            e_pcrel = 0b111011,
+        };
+
         // Func enum for special3 instructions
         enum class Special3Func : uint8_t { e_bshfl = 0b100000 };
 
@@ -176,6 +183,15 @@ namespace mips_emulator {
         enum class RegimmITypeOp : uint8_t {
             e_bgez = 1,
             e_bltz = 0,
+        };
+
+        // regimm function types are dependent on value in bits 16 to 20
+        // The first two instructions are solely dependent on value in bits 19 to 20
+        enum class PCrelITypeOp : uint8_t {
+            e_addiupc = 0,
+            e_lwpc = 1,
+            e_auipc = 0b11110,
+            e_aluipc = 0b11111,
         };
 
         // Opcode enum for special3 r-type like instructions
@@ -270,6 +286,26 @@ namespace mips_emulator {
             uint32_t regimm : 6;
         });
 
+        // pcrel structs
+        // similar to itype instructions but all share the same op-code
+        // function type is determined by bits 16-20
+        PACKED(struct PCrelIType {
+            uint32_t imm : 16;
+            uint32_t op : 5;
+            uint32_t rs : 5;
+            uint32_t pcrel : 6;
+        });
+
+        // pcrel structs
+        // similar to itype instructions but all share the same op-code
+        // function type is determined by bits 19-20
+        PACKED(struct PCrel2BitType {
+            uint32_t imm : 19;
+            uint32_t op : 2;
+            uint32_t rs : 5;
+            uint32_t pcrel : 6;
+        });
+
         // Make sure internal structs are the same size
         static_assert(sizeof(General) == 4,
                       "Instruction::General bitfield is not 4 bytes in size");
@@ -285,12 +321,14 @@ namespace mips_emulator {
                       "Instruction::FPUIType bitfield is not 4 bytes in size");
         static_assert(sizeof(FPUTType) == 4,
                       "Instruction::FPUTType bitfield is not 4 bytes in size");
-        static_assert(
-            sizeof(Special3RType) == 4,
-            "Instruction::Special3RType bitfield is not 4 bytes in size");
-        static_assert(
-            sizeof(RegimmIType) == 4,
-            "Instruction::RegimmIType bitfield is not 4 bytes in size");
+        static_assert(sizeof(Special3RType) == 4,
+                      "Instruction::Special3RType bitfield is not 4 bytes in size");
+        static_assert(sizeof(RegimmIType) == 4,
+                      "Instruction::RegimmIType bitfield is not 4 bytes in size");
+        static_assert(sizeof(PCrelIType) == 4,
+                      "Instruction::PCrelIType bitfield is not 4 bytes in size");
+        static_assert(sizeof(PCrel2BitType) == 4,
+                      "Instruction::PCrel2BitType bitfield is not 4 bytes in size");
 
         // R-Type
         Instruction(const Func func, const RegisterName rd,
@@ -387,6 +425,15 @@ namespace mips_emulator {
             regimm_itype.regimm = 1;
         }
 
+        // PCrel I-Type
+        Instruction(const PCrelITypeOp opcode, const RegisterName rs,
+                    const uint32_t immediate) {
+            pcrel_itype.pcrel = static_cast<uint8_t>(PCrelOpcode::e_pcrel);
+            pcrel_itype.rs = static_cast<uint8_t>(rs);
+            pcrel_itype.op = static_cast<uint8_t>(opcode);
+            pcrel_itype.imm = immediate;
+        }
+
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {
                 if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
@@ -404,6 +451,12 @@ namespace mips_emulator {
                      static_cast<uint8_t>(RegimmOpcode::e_regimm)) {
                 // TODO, handle other types
                 return Type::e_regimm_itype;
+            }
+            else if (general.op ==
+                     static_cast<uint8_t>(PCrelOpcode::e_pcrel)) {
+                if (pcrel_itype.op & 0b10) return Type::e_pcrel_itype;
+
+                return Type::e_pcrel_2bittype;
             }
 
             switch (general.op & ~1) {
@@ -427,6 +480,9 @@ namespace mips_emulator {
         Special3RType special3_rtype;
 
         RegimmIType regimm_itype;
+
+        PCrelIType pcrel_itype;
+        PCrel2BitType pcrel_2bittype;
 
     }; // namespace mips_emulator
 

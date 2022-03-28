@@ -454,7 +454,7 @@ namespace mips_emulator {
             }
             else if (general.op ==
                      static_cast<uint8_t>(PCrelOpcode::e_pcrel)) {
-                if (pcrel_itype.op & 0b10) return Type::e_pcrel_itype;
+                if ((pcrel_itype.op & 0b10) != 0) return Type::e_pcrel_itype;
 
                 return Type::e_pcrel_2bittype;
             }

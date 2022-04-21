@@ -245,29 +245,7 @@ namespace mips_emulator {
                     break;
                 }
 
-                case IOp::e_blez: {
-                    if (rs.s <= 0) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
-                    }
-                    break;
-                }
 
-                case IOp::e_bgtz: {
-                    if (rs.s > 0) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
-                    }
-                    break;
-                }
-
-                case IOp::e_addi: {
-                    reg_file.set_signed(instr.itype.rt,
-                                        rs.s + sign_ext_imm(instr.itype.imm));
-                    break;
-                }
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u + sign_ext_imm(instr.itype.imm));
@@ -304,6 +282,122 @@ namespace mips_emulator {
                 case IOp::e_xori: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u ^ instr.itype.imm);
+                    break;
+                }
+
+                //  HERE LIES MADNESS... i hate POP
+                case IOp::e_pop06: {
+                    if (instr.itype.rt == 0) {
+                        // BLEZ
+                        if (rs.s <= 0) {
+                            reg_file.delayed_branch(
+                                reg_file.get_pc() +
+                                (sign_ext_imm(instr.itype.imm) * 4));
+                        }
+                    }
+                    else if (instr.itype.rs == 0 && instr.itype.rs != 0) {
+                        // BLEZALC
+                    }
+                    else if (instr.itype.rs == instr.itype.rt &&
+                             instr.itype.rt != 0) {
+                        // BGEZALC
+                    }
+                    else if (instr.itype.rs != instr.itype.rt &&
+                             instr.itype.rs != 0 && instr.itype.rt != 0) {
+                        // BGEUC
+                    }
+                    break;
+                }
+                case IOp::e_pop07: {
+                    if (instr.itype.rt == 0) {
+                        // BGTZ
+                        if (rs.s > 0) {
+                            reg_file.delayed_branch(
+                                reg_file.get_pc() +
+                                (sign_ext_imm(instr.itype.imm) * 4));
+                        }
+                    }
+                    else if (instr.itype.rs == 0 && instr.itype.rs != 0) {
+                        // BGTZALC
+                    }
+                    else if (instr.itype.rs == instr.itype.rt &&
+                             instr.itype.rt != 0) {
+                        // BLTZALC
+                    }
+                    else if (instr.itype.rs != instr.itype.rt &&
+                             instr.itype.rs != 0 && instr.itype.rt != 0) {
+                        // BLTUC
+                    }
+                    break;
+                }
+
+                case IOp::e_pop10: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
+                        instr.itype.rs < instr.itype.rt) { // rs < rt???????
+                        // BEQZALC
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rs <
+                                 instr.itype.rt) { // rs < rt???????
+                        // BEQC
+                    }
+                    else if (instr.itype.rs >= instr.itype.rt) {
+                        // BOVC
+                    }
+                    break;
+                }
+                case IOp::e_pop30: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
+                        instr.itype.rs < instr.itype.rt) {
+                        // BNEZALC
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rs < instr.itype.rt) {
+                        // BNEC
+                    }
+                    else if (instr.itype.rs >= instr.itype.rt) {
+                        // BNVC
+                    }
+                    break;
+                }
+
+                case IOp::e_pop26: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BLEZC
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt == instr.itype.rs) {
+                        // BGEZC
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt != instr.itype.rs) {
+                        // BGEC
+                    }
+                    break;
+                }
+                case IOp::e_pop27: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BGTZC
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt == instr.itype.rs) {
+                        // BLTZC
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt != instr.itype.rs) {
+                        // BLTC
+                    }
+                    break;
+                }
+
+                case IOp::e_pop66: {
+                    // TODO
+                    // Maybe these should be their own Instruction type?????
+                    break;
+                }
+                case IOp::e_pop76: {
+                    // TODO
+                    // Maybe these should be their own Instruction type?????
                     break;
                 }
 

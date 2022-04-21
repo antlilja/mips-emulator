@@ -102,10 +102,7 @@ namespace mips_emulator {
 
         enum class ITypeOpcode : uint8_t {
             e_beq = 4,
-            e_blez = 6,
             e_bne = 5,
-            e_bgtz = 7,
-            e_addi = 8,
             e_addiu = 9,
             e_aui = 15,
             e_slti = 10,
@@ -121,6 +118,15 @@ namespace mips_emulator {
             e_lh = 0b100001,
             e_lhu = 0b100101,
             e_sh = 0b101001,
+            e_pop06 = 0b000110,
+            e_pop07 = 0b000111,
+            e_pop10 = 0b001000,
+            e_pop26 = 0b010110,
+            e_pop27 = 0b010111,
+            e_pop30 = 0b011000,
+            e_pop66 = 0b110110,
+            e_pop76 = 0b111110,
+
         };
 
         enum class JTypeOpcode : uint8_t {

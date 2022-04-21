@@ -226,21 +226,22 @@ namespace mips_emulator {
             const Register rt = reg_file.get(instr.rtype.rt);
 
             const IOp op = static_cast<IOp>(instr.itype.op);
+            
+            // set PC after successful branch
+            const uint32_t branch_target = reg_file.get_pc() +
+                            (sign_ext_imm(instr.itype.imm) * 4);
 
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                        reg_file.delayed_branch(branch_target);
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
                         reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                            branch_target);
                     }
                     break;
                 }
@@ -291,8 +292,7 @@ namespace mips_emulator {
                         // BLEZ
                         if (rs.s <= 0) {
                             reg_file.delayed_branch(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                                branch_target);
                         }
                     }
                     else if (instr.itype.rs == 0 && instr.itype.rs != 0) {
@@ -313,8 +313,7 @@ namespace mips_emulator {
                         // BGTZ
                         if (rs.s > 0) {
                             reg_file.delayed_branch(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                                branch_target);
                         }
                     }
                     else if (instr.itype.rs == 0 && instr.itype.rs != 0) {
@@ -335,28 +334,55 @@ namespace mips_emulator {
                     if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
                         instr.itype.rs < instr.itype.rt) { // rs < rt???????
                         // BEQZALC
+                        if(!rt.u) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(reg_file.get_pc() +
+                                (sign_ext_imm(instr.itype.imm) * 4));
+                        }
+
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
                              instr.itype.rs <
                                  instr.itype.rt) { // rs < rt???????
                         // BEQC
+                        if(rt.u == rs.u)
+                            reg_file.set_pc(branch_target);
                     }
                     else if (instr.itype.rs >= instr.itype.rt) {
                         // BOVC
+
+                        const bool carry = rs.u + rt.u < rs.u;
+                        const bool is_signed = ((rs.u + rt.u) & 0x80000000) > 0;
+                        const bool sum_overflow = carry != is_signed;
+                        if(sum_overflow)
+                            reg_file.set_pc(branch_target);
                     }
                     break;
                 }
                 case IOp::e_pop30: {
                     if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
                         instr.itype.rs < instr.itype.rt) {
+                        
                         // BNEZALC
+                        if(rt.u) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(reg_file.get_pc() +
+                                (sign_ext_imm(instr.itype.imm) * 4));
+                        }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
                              instr.itype.rs < instr.itype.rt) {
                         // BNEC
+                        if(rt.u != rs.u)
+                            reg_file.set_pc(branch_target);
                     }
                     else if (instr.itype.rs >= instr.itype.rt) {
                         // BNVC
+                        const bool carry = rs.u + rt.u < rs.u;
+                        const bool is_signed = ((rs.u + rt.u) & 0x80000000) > 0;
+                        const bool sum_overflow = carry != is_signed;
+                        if(!sum_overflow)
+                            reg_file.set_pc(branch_target);
                     }
                     break;
                 }

@@ -489,14 +489,14 @@ TEST_CASE("pop10") {
     }
 
     SECTION("BOVC - Branch") { // Branch not overflow
-        test({10, 10, 0xFFFFFFFF, 0xFFFFFFFF, true, false});
-        test({10, 5, 0x1000, 0xFFFFFFFF, true, false});
-        test({10, 5, 0xFFFFFFFF, 0xF0000000, true, false});
+        test({10, 10, 0x7FFFFFFF, 0x7FFFFFFF, true, false});
+        test({10, 5, 0x1, INT32_MAX, true, false});
+        test({10, 5, INT32_MAX, 0x1, true, false});
     }
 
     SECTION("BOVC - No Branch") {
-        test({10, 10, 0, 0, false, true});
-        test({10, 5, 10, 0, false, true});
+        test({10, 10, 0, 0, false, false});
+        test({10, 5, 10, 0, false, false});
     }
 
     SECTION("BEQC - No Branch") {
@@ -519,25 +519,25 @@ TEST_CASE("pop30") {
     };
 
     SECTION("BNVC - No Branch") { // Branch not overflow
-        test({10, 10, 0xFFFFFFFF, 0xFFFFFFFF, false, false});
-        test({10, 5, 0x1000, 0xFFFFFFFF, false, false});
-        test({10, 4, 0xFFFFFFFF, 0xF0000000, false, false});
-    }
+        test({10, 10, 0x40000000, 0x40000000, false, false});
+        test({10, 5, 1, INT32_MAX, false, false});
+        test({10, 4, INT32_MAX, 1, false, false});
+    }   
 
     SECTION("BNVC - Branch") {
-        test({10, 10, 0, 0, true, true});
-        test({10, 5, 10, 0, true, true});
+        test({10, 10, 0, 0, true, false});
+        test({10, 5, 10, 0, true, false});
     }
 
     SECTION("BNEZALC - Branch") {
-        test({0, 10, 0, 20, true, false});
-        test({0, 10, 0, 1, true, false});
-        test({0, 10, 0, 0xf0000000, true, false});
+        test({0, 10, 0, 20, true, true});
+        test({0, 10, 0, 1, true, true});
+        test({0, 10, 0, 0xf0000000, true, true});
     }
 
     SECTION("BNEZALC - No Branch") {
-        test({0, 10, 0, 0, false, true});
-        test({0, 15, 10, 0, false, true});
+        test({0, 10, 0, 0, false, false});
+        test({0, 15, 10, 0, false, false});
     }
 
     SECTION("BNEC - Branch") {

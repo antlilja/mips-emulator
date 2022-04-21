@@ -92,10 +92,10 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
 TEST_CASE("I-Type instruction", "[Instruction]") {
 
     SECTION("get_type") {
-        IOp iops[] = {IOp::e_beq,  IOp::e_bne,   IOp::e_bgtz, IOp::e_blez,
-                      IOp::e_addi, IOp::e_addiu, IOp::e_slti, IOp::e_sltiu,
-                      IOp::e_andi, IOp::e_ori,   IOp::e_xori, IOp::e_lb,    
-                      IOp::e_lbu,  IOp::e_lw,    IOp::e_sb,   IOp::e_sw};
+        IOp iops[] = {IOp::e_beq,   IOp::e_bne,   IOp::e_pop06, IOp::e_pop07,
+                      IOp::e_pop10, IOp::e_addiu, IOp::e_slti,  IOp::e_sltiu,
+                      IOp::e_andi,  IOp::e_ori,   IOp::e_xori,  IOp::e_lb,
+                      IOp::e_lbu,   IOp::e_lw,    IOp::e_sb,    IOp::e_sw};
 
         for (auto const i : iops) {
 
@@ -111,18 +111,18 @@ TEST_CASE("I-Type instruction", "[Instruction]") {
         }
     }
 
-    SECTION("addi - zero registers and zero imm") {
-        const Instruction instr(IOp::e_addi, RegisterName::e_0,
+    SECTION("addiu - zero registers and zero imm") {
+        const Instruction instr(IOp::e_addiu, RegisterName::e_0,
                                 RegisterName::e_0, 0);
 
-        REQUIRE(instr.raw == 0x20000000);
+        REQUIRE(instr.raw == 0x24000000);
     }
 
-    SECTION("addi - non zero registers and imm") {
-        const Instruction instr(IOp::e_addi, RegisterName::e_t0,
+    SECTION("addiu - non zero registers and imm") {
+        const Instruction instr(IOp::e_addiu, RegisterName::e_t0,
                                 RegisterName::e_t5, 0xffff);
 
-        REQUIRE(instr.raw == 0x21a8ffff);
+        REQUIRE(instr.raw == 0x25a8ffff);
     }
 }
 

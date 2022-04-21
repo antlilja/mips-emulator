@@ -94,7 +94,7 @@ TEST_CASE("I-Type instruction", "[Instruction]") {
     SECTION("get_type") {
         IOp iops[] = {IOp::e_beq,  IOp::e_bne,   IOp::e_bgtz, IOp::e_blez,
                       IOp::e_addi, IOp::e_addiu, IOp::e_slti, IOp::e_sltiu,
-                      IOp::e_andi, IOp::e_ori,   IOp::e_xori, IOp::e_lb,    
+                      IOp::e_andi, IOp::e_ori,   IOp::e_xori, IOp::e_lb,
                       IOp::e_lbu,  IOp::e_lw,    IOp::e_sb,   IOp::e_sw};
 
         for (auto const i : iops) {
@@ -206,12 +206,40 @@ TEST_CASE("FPU B Type", "[Instruction]") {
     }
 }
 
-TEST_CASE("Special3 R Type", "[Instruction]") {
+TEST_CASE("Special3 Type", "[Instruction]") {
     using Type = Instruction::Type;
     using R = Instruction::Special3Func;
-    using ROp = Instruction::Special3RTypeOp;
+    using ROp = Instruction::Special3BSHFLTypeOp;
 
-    SECTION("get_type") {
+    SECTION("get_type ext") {
+        // EXT, rt, rs, msbd(rd), lsb(extra), func
+        const auto inst =
+            Instruction(R::e_ext, 0, 1, RegisterName::e_t0, RegisterName::e_t1);
+        REQUIRE(inst.get_type() == Type::e_special3_rtype);
+    }
+
+    // Note, the size parameter is stored as size-1 in the machine instruction
+    SECTION("ext $t0 $t1 0 1") {
+        Instruction inst(R::e_ext, 0, 0, RegisterName::e_t1,
+                         RegisterName::e_t0);
+        REQUIRE(inst.raw == 0x7D280000);
+    }
+
+    SECTION("get_type ins") {
+        // INS, rt, rs, msb(rd), lsb(extra), func
+        const auto inst =
+            Instruction(R::e_ins, 0, 0, RegisterName::e_t0, RegisterName::e_t1);
+        REQUIRE(inst.get_type() == Type::e_special3_rtype);
+    }
+
+    // Note, the size parameter is stored as size-1 in the machine instruction
+    SECTION("ins $t0 $t1 0 1") {
+        Instruction inst(R::e_ins, 0, 0, RegisterName::e_t1,
+                         RegisterName::e_t0);
+        REQUIRE(inst.raw == 0x7D280004);
+    }
+
+    SECTION("get_type bshfl") {
         ROp instr[] = {ROp::e_bitswap, ROp::e_wsbh, ROp::e_seb, ROp::e_seh};
 
         for (auto const v : instr) {

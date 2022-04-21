@@ -412,52 +412,104 @@ namespace mips_emulator {
         handle_special3_rtype_instr(const Instruction instr,
                                     RegisterFile& reg_file) {
             using Register = typename RegisterFile::Register;
-            using ROp = Instruction::Special3RTypeOp;
+            using RFunc = Instruction::Special3Func;
 
             const Register rt = reg_file.get(instr.special3_rtype.rt);
 
-            const ROp op = static_cast<ROp>(instr.special3_rtype.op);
-            switch (op) {
-                case ROp::e_bitswap: {
-                    // Swaps (reverses) bits in a byte
-                    // Example: 0b11001000 -> 0b00010011
-                    const auto reverse_byte_bits = [&](uint8_t val) {
-                        val = ((val >> 1) & 0x55) | ((val & 0x55) << 1);
-                        val = ((val >> 2) & 0x33) | ((val & 0x33) << 2);
-                        val = ((val >> 4) & 0x0f) | ((val & 0x0f) << 4);
-                        return val;
-                    };
+            // Switch on Func since instruction layouts are different
+            switch (static_cast<RFunc>(instr.special3_rtype.func)) {
+                case RFunc::e_bshfl: {
+                    // BSHFL, zero(rs), rt, rd, rop(extra), func
+                    using ROp = Instruction::Special3BSHFLTypeOp;
+                    const ROp op = static_cast<ROp>(instr.special3_rtype.extra);
+                    switch (op) {
+                        case ROp::e_bitswap: {
+                            // Swaps (reverses) bits in a byte
+                            // Example: 0b11001000 -> 0b00010011
+                            const auto reverse_byte_bits = [&](uint8_t val) {
+                                val = ((val >> 1) & 0x55) | ((val & 0x55) << 1);
+                                val = ((val >> 2) & 0x33) | ((val & 0x33) << 2);
+                                val = ((val >> 4) & 0x0f) | ((val & 0x0f) << 4);
+                                return val;
+                            };
 
-                    // Swaps (reverses) the bits for each byte
-                    uint32_t result = 0;
-                    for (int i = 0; i < sizeof(uint32_t); i++)
-                        result |= reverse_byte_bits((rt.u >> i * 8)) << (i * 8);
+                            // Swaps (reverses) the bits for each byte
+                            uint32_t result = 0;
+                            for (int i = 0; i < sizeof(uint32_t); i++)
+                                result |= reverse_byte_bits((rt.u >> i * 8))
+                                          << (i * 8);
 
-                    reg_file.set_unsigned(instr.special3_rtype.rd, result);
+                            reg_file.set_unsigned(instr.special3_rtype.rd,
+                                                  result);
+
+                            break;
+                        }
+                        case ROp::e_wsbh: {
+                            // Word Swap Bytes Within Halfwords
+                            reg_file.set_unsigned(
+                                instr.special3_rtype.rd,
+                                ((rt.u & 0xFF) << 8) | ((rt.u & 0xFF00) >> 8) |
+                                    ((rt.u & 0xFF0000) << 8) |
+                                    ((rt.u & 0xFF000000) >> 8));
+                            break;
+                        }
+                        case ROp::e_seb: {
+                            // Sign-extend Byte
+                            reg_file.set_unsigned(
+                                instr.special3_rtype.rd,
+                                (((~0U) << 8) * ((rt.u >> 7) & 1)) |
+                                    (rt.u & 0xFF));
+                            break;
+                        }
+                        case ROp::e_seh: {
+                            // Sign-extend Halfword
+                            reg_file.set_unsigned(
+                                instr.special3_rtype.rd,
+                                (((~0U) << 16) * ((rt.u >> 15) & 1)) |
+                                    (rt.u & 0xFFFF));
+                            break;
+                        }
+                        default: return false;
+                    }
 
                     break;
                 }
-                case ROp::e_wsbh: {
-                    // Word Swap Bytes Within Halfwords
-                    reg_file.set_unsigned(instr.special3_rtype.rd,
-                                          ((rt.u & 0xFF) << 8) |
-                                              ((rt.u & 0xFF00) >> 8) |
-                                              ((rt.u & 0xFF0000) << 8) |
-                                              ((rt.u & 0xFF000000) >> 8));
+                case RFunc::e_ins: {
+                    // INS, rs, rt, msb(rd), lsb(extra), func
+                    const uint32_t msb = instr.special3_rtype.rd;
+                    const uint32_t lsb = instr.special3_rtype.extra;
+                    const uint32_t size = msb - lsb + 1;
+
+                    // Error cases
+                    if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
+                        return false;
+
+                    // Mask out the lowest 'size' bits from rs register
+                    uint32_t mask = (size == 32) ? ~0 : (1 << size) - 1;
+                    uint32_t bitfield =
+                        reg_file.get(instr.special3_rtype.rs).u & mask;
+
+                    // Shift mask to output position and insert bitfield
+                    mask = ~(mask << lsb);
+                    const uint32_t val = (rt.u & mask) | (bitfield << lsb);
+                    reg_file.set_unsigned(instr.special3_rtype.rt, val);
                     break;
                 }
-                case ROp::e_seb: {
-                    // Sign-extend Byte
-                    reg_file.set_unsigned(instr.special3_rtype.rd,
-                                          (((~0U) << 8) * ((rt.u >> 7) & 1)) |
-                                              (rt.u & 0xFF));
-                    break;
-                }
-                case ROp::e_seh: {
-                    // Sign-extend Halfword
-                    reg_file.set_unsigned(instr.special3_rtype.rd,
-                                          (((~0U) << 16) * ((rt.u >> 15) & 1)) |
-                                              (rt.u & 0xFFFF));
+                case RFunc::e_ext: {
+                    // EXT, rt, rs, msbd(rd), lsb(extra), func
+                    const uint32_t size = instr.special3_rtype.rd + 1;
+                    const uint32_t lsb = instr.special3_rtype.extra;
+
+                    // Error cases
+                    if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
+                        return false;
+
+                    uint32_t mask =
+                        (size == 32) ? ~0 : ((1 << size) - 1) << lsb;
+                    const uint32_t bitfield =
+                        (reg_file.get(instr.special3_rtype.rs).u & mask);
+                    reg_file.set_unsigned(instr.special3_rtype.rt,
+                                          bitfield >> lsb);
                     break;
                 }
                 default: return false;

@@ -263,11 +263,6 @@ namespace mips_emulator {
                     break;
                 }
 
-                case IOp::e_addi: {
-                    reg_file.set_signed(instr.itype.rt,
-                                        rs.s + sign_ext_imm(instr.itype.imm));
-                    break;
-                }
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u + sign_ext_imm(instr.itype.imm));

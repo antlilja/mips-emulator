@@ -170,7 +170,11 @@ namespace mips_emulator {
         };
 
         // Func enum for special3 instructions
-        enum class Special3Func : uint8_t { e_bshfl = 0b100000 };
+        enum class Special3Func : uint8_t {
+            e_ext = 0,
+            e_ins = 0b000100,
+            e_bshfl = 0b100000,
+        };
 
         // regimm function types are dependent on value in bits 16 to 20
         enum class RegimmITypeOp : uint8_t {
@@ -178,11 +182,10 @@ namespace mips_emulator {
             e_bltz = 0,
         };
 
-        // Opcode enum for special3 r-type like instructions
-        // Calling them R-type due to lack of better name
+        // Opcode enum for special3 bshfl instructions
         // Special3 instructions have a bunch of different layouts depending on
         // the func field
-        enum class Special3RTypeOp : uint8_t {
+        enum class Special3BSHFLTypeOp : uint8_t {
             e_bitswap = 0,
             e_wsbh = 0b00010,
             e_seh = 0b11000,
@@ -253,10 +256,10 @@ namespace mips_emulator {
         // the func field
         PACKED(struct Special3RType {
             uint32_t func : 6;
-            uint32_t op : 5;
+            uint32_t extra : 5;
             uint32_t rd : 5;
             uint32_t rt : 5;
-            uint32_t zero : 5;
+            uint32_t rs : 5;
             uint32_t special3 : 6;
         });
 
@@ -367,13 +370,24 @@ namespace mips_emulator {
         Instruction(const uint32_t value) { raw = value; }
 
         // Special3 R-Type
-        Instruction(const Special3Func func, const Special3RTypeOp op,
+        Instruction(const Special3Func func, const Special3BSHFLTypeOp op,
                     const RegisterName rd, const RegisterName rt) {
             special3_rtype.func = static_cast<uint8_t>(func);
-            special3_rtype.op = static_cast<uint8_t>(op);
+            special3_rtype.extra = static_cast<uint8_t>(op);
             special3_rtype.rd = static_cast<uint8_t>(rd);
             special3_rtype.rt = static_cast<uint8_t>(rt);
-            special3_rtype.zero = 0;
+            special3_rtype.rs = 0;
+            special3_rtype.special3 =
+                static_cast<uint8_t>(Special3Opcode::e_special3);
+        }
+        Instruction(const Special3Func func, const uint8_t extra,
+                    const uint8_t rd, const RegisterName rs,
+                    const RegisterName rt) {
+            special3_rtype.func = static_cast<uint8_t>(func);
+            special3_rtype.extra = extra;
+            special3_rtype.rd = rd;
+            special3_rtype.rs = static_cast<uint8_t>(rs);
+            special3_rtype.rt = static_cast<uint8_t>(rt);
             special3_rtype.special3 =
                 static_cast<uint8_t>(Special3Opcode::e_special3);
         }

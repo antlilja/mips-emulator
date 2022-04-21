@@ -25,7 +25,7 @@ TEST_CASE("addiu", "[Executor]") {
 
         Instruction instr(IOp::e_addiu, RegisterName::e_t1, RegisterName::e_t0,
                           333);
-        
+
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
@@ -35,11 +35,11 @@ TEST_CASE("addiu", "[Executor]") {
     SECTION("No overflow error") {
         using Address = typename RegisterFile::Unsigned;
         RegisterFile reg_file;
-        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX-1);
+        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX - 1);
 
         Instruction instr(IOp::e_addiu, RegisterName::e_t1, RegisterName::e_t0,
                           15);
-        
+
         const bool no_error = Executor::handle_itype_instr(instr, reg_file);
         REQUIRE(no_error);
 
@@ -457,5 +457,51 @@ TEST_CASE("store instructions", "[Executor]") {
         REQUIRE(!read_mem.is_error());
 
         REQUIRE(read_mem.get_value() == 0x96);
+    }
+}
+
+TEST_CASE("pop10") {
+    auto test = [](const BranchTest tcase) {
+        RegisterFile reg_file;
+        const uint32_t start_pc = 0x1000;
+        reg_file.set_unsigned(31, 0); // $ra
+        reg_file.set_unsigned(tcase.rs, tcase.rs_val);
+        reg_file.set_unsigned(tcase.rt, tcase.rt_val);
+        reg_file.set_pc(start_pc);
+
+        reg_file.inc_pc();
+        Instruction instr(IOp::e_pop10, static_cast<RegisterName>(tcase.rt),
+                          static_cast<RegisterName>(tcase.rs), 0xFFB0);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() ==
+                start_pc - 0x50 * tcase.will_branch * 4 + 4);
+        REQUIRE(reg_file.get(31).u == (start_pc + 4) * tcase.will_link);
+    };
+
+    SECTION("BEQZALC - No Branch") {
+        test({0, 10, 0, 20, false, false});
+        test({0, 10, 0, 1, false, false});
+        test({0, 10, 0, 0xf0000000, false, false});
+    }
+
+    SECTION("BEQZALC - Branch") {
+        test({0, 10, 0, 0, true, true});
+        test({0, 15, 10, 0, true, true});
+    }
+
+    SECTION("BEQC - No Branch") {
+        test({4, 10, 0, 1, false, false});
+        test({4, 10, 100, 1, false, false});
+        test({4, 10, 0xf0000, 0, false, false});
+        test({4, 10, 0xf0000, 0x00f00000, false, false});
+    }
+
+    SECTION("BEQC - Branch") {
+        test({4, 10, 0, 0, true, false});
+        test({7, 15, 50, 50, true, false});
+        test({7, 15, 50, 50, 0xff000000, 0xff000000});
     }
 }

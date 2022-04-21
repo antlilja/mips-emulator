@@ -54,6 +54,28 @@ namespace mips_emulator {
         }
 
         template <typename T>
+        Result<T, MemoryError> read_no_mmio(const Address address) {
+            static_assert(sizeof(T) <= sizeof(Address),
+                          "Can't read larger than word size");
+
+            // NOTE: Types of size 1 are always aligned
+            if constexpr (sizeof(T) > 1 && aligned_access) {
+                if (!is_aligned<T>(address)) {
+                    return MemoryError::unaligned_access;
+                }
+            }
+
+            // NOTE: Bounds check after MMIO, MMIO could have a bigger range
+            if (!is_in_bounds<T>(address)) {
+                return MemoryError::out_of_bounds_access;
+            }
+
+            return *reinterpret_cast<T*>(
+                static_cast<MemoryImplemantion*>(this)->get_memory() + address -
+                offset);
+        }
+
+        template <typename T>
         Result<void, MemoryError> store(const Address address, const T value) {
             static_assert(sizeof(T) <= sizeof(Address),
                           "Can't read larger than word size");
@@ -68,6 +90,31 @@ namespace mips_emulator {
             // Try to write to MMIO handler
             if constexpr (!std::is_same_v<MMIOHandler, NullMMIO>) {
                 if (mmio->template store<T>(address, value)) return {};
+            }
+
+            // NOTE: Bounds check after MMIO, MMIO could have a bigger range
+            if (!is_in_bounds<T>(address)) {
+                return MemoryError::out_of_bounds_access;
+            }
+
+            *reinterpret_cast<T*>(
+                static_cast<MemoryImplemantion*>(this)->get_memory() + address -
+                offset) = value;
+
+            return {};
+        }
+
+        template <typename T>
+        Result<void, MemoryError> store_no_mmio(const Address address,
+                                                const T value) {
+            static_assert(sizeof(T) <= sizeof(Address),
+                          "Can't store larger than word size");
+
+            // NOTE: Types of size 1 are always aligned
+            if constexpr (sizeof(T) > 1 && aligned_access) {
+                if (!is_aligned<T>(address)) {
+                    return MemoryError::unaligned_access;
+                }
             }
 
             // NOTE: Bounds check after MMIO, MMIO could have a bigger range

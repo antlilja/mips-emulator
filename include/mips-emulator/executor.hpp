@@ -401,28 +401,46 @@ namespace mips_emulator {
                 case IOp::e_pop26: {
                     if (instr.itype.rs == 0 && instr.itype.rt != 0) {
                         // BLEZC
+                        if (rt.s <= 0) {
+                            reg_file.set_pc(branch_target);
+                        }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
                              instr.itype.rt == instr.itype.rs) {
                         // BGEZC
+                        if (rt.s >= 0) {
+                            reg_file.set_pc(branch_target);
+                        }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
                              instr.itype.rt != instr.itype.rs) {
                         // BGEC
+                        if (rs.s >= rt.s) {
+                            reg_file.set_pc(branch_target);
+                        }
                     }
                     break;
                 }
                 case IOp::e_pop27: {
                     if (instr.itype.rs == 0 && instr.itype.rt != 0) {
                         // BGTZC
+                        if (rt.s > 0) {
+                            reg_file.set_pc(branch_target);
+                        }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
                              instr.itype.rt == instr.itype.rs) {
                         // BLTZC
+                        if (rt.s < 0) {
+                            reg_file.set_pc(branch_target);
+                        }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
                              instr.itype.rt != instr.itype.rs) {
                         // BLTC
+                        if (rs.s < rt.s) {
+                            reg_file.set_pc(branch_target);
+                        }
                     }
                     break;
                 }

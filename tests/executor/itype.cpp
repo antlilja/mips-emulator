@@ -676,7 +676,7 @@ TEST_CASE("pop26 - compact") {
 
 TEST_CASE("pop27 - compact") {
     auto test = [](const BranchTest tcase) {
-        test_branch_compact(tcase, IOp::e_pop26);
+        test_branch_compact(tcase, IOp::e_pop27);
     };
 
     SECTION("BGTZC - No Branch") { // rs == 0 rt != 0

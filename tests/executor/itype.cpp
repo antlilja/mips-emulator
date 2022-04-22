@@ -522,7 +522,7 @@ TEST_CASE("pop30") {
         test({10, 10, 0x40000000, 0x40000000, false, false});
         test({10, 5, 1, INT32_MAX, false, false});
         test({10, 4, INT32_MAX, 1, false, false});
-    }   
+    }
 
     SECTION("BNVC - Branch") {
         test({10, 10, 0, 0, true, false});
@@ -551,5 +551,85 @@ TEST_CASE("pop30") {
         test({4, 10, 0, 0, false, false});
         test({7, 15, 50, 50, false, false});
         test({7, 15, 0xff000000, 0xff000000, false, false});
+    }
+}
+
+TEST_CASE("pop06 - compact") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop06);
+    };
+
+    SECTION("BLEZALC - Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, (uint32_t)(0), true, true});
+        test({0, 10, 0, (uint32_t)(-0x100), true, true});
+        test({0, 10, 0, (uint32_t)(INT32_MIN), true, true});
+    }
+
+    SECTION("BLEZALC - No Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, 1, false, false});
+        test({0, 15, 10, INT_MAX, false, false});
+    }
+
+    SECTION("BGEZALC - Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(0), (uint32_t)(0), true, true});
+        test({10, 10, 1, 1, true, true});
+        test({10, 15, INT_MAX, INT_MAX, true, true});
+    }
+
+    SECTION("BGEZALC - No Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(-0x100), (uint32_t)(-0x100), false, false});
+        test({10, 10, (uint32_t)(INT32_MIN), (uint32_t)(INT32_MIN), false,
+              false});
+    }
+
+    SECTION("BGEUC - Branch") { // rs != rt != 0
+        test({5, 10, 0xf0000000, 0, true, false});
+        test({5, 10, 0x1000, 0, true, false});
+        test({5, 10, 0, 0, true, false});
+    }
+
+    SECTION("BGEUC - No Branch") { // rs != rt != 0
+        test({5, 10, 0, 0xf0000000, false, false});
+        test({5, 10, 0, 0x1000, false, false});
+    }
+}
+
+TEST_CASE("pop07 - compact") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop07);
+    };
+
+    SECTION("BGTZALC - No Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, (uint32_t)(0), false, false});
+        test({0, 10, 0, (uint32_t)(-0x100), false, false});
+        test({0, 10, 0, (uint32_t)(INT32_MIN), false, false});
+    }
+
+    SECTION("BGTZALC - Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, 1, true, true});
+        test({0, 15, 10, INT_MAX, true, true});
+    }
+
+    SECTION("BLTZALC - No Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(0), (uint32_t)(0), false, false});
+        test({10, 10, 1, 1, false, false});
+        test({10, 15, INT_MAX, INT_MAX, false, false});
+    }
+
+    SECTION("BLTZALC - Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(-0x100), (uint32_t)(-0x100), true, true});
+        test(
+            {10, 10, (uint32_t)(INT32_MIN), (uint32_t)(INT32_MIN), true, true});
+    }
+
+    SECTION("BLTUC - No Branch") { // rs != rt != 0
+        test({5, 10, 0xf0000000, 0, false, false});
+        test({5, 10, 0x1000, 0, false, false});
+        test({5, 10, 0, 0, false, false});
+    }
+
+    SECTION("BLTUC - Branch") { // rs != rt != 0
+        test({5, 10, 0, 0xf0000000, true, false});
+        test({5, 10, 0, 0x1000, true, false});
     }
 }

@@ -296,9 +296,7 @@ namespace mips_emulator {
                         // BLEZALC
                         if (rt.s <= 0) {
                             reg_file.set_unsigned(31, reg_file.get_pc());
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     else if (instr.itype.rs == instr.itype.rt &&
@@ -306,18 +304,14 @@ namespace mips_emulator {
                         // BGEZALC
                         if (rt.s >= 0) {
                             reg_file.set_unsigned(31, reg_file.get_pc());
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     else if (instr.itype.rs != instr.itype.rt &&
                              instr.itype.rs != 0 && instr.itype.rt != 0) {
                         // BGEUC
                         if (rs.u >= rt.u) {
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     break;
@@ -333,9 +327,7 @@ namespace mips_emulator {
                         // BGTZALC
                         if (rt.s > 0) {
                             reg_file.set_unsigned(31, reg_file.get_pc());
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     else if (instr.itype.rs == instr.itype.rt &&
@@ -343,18 +335,14 @@ namespace mips_emulator {
                         // BLTZALC
                         if (rt.s < 0) {
                             reg_file.set_unsigned(31, reg_file.get_pc());
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     else if (instr.itype.rs != instr.itype.rt &&
                              instr.itype.rs != 0 && instr.itype.rt != 0) {
                         // BLTUC
                         if (rs.u < rt.u) {
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     break;
@@ -366,9 +354,7 @@ namespace mips_emulator {
                         // BEQZALC
                         if (!rt.u) {
                             reg_file.set_unsigned(31, reg_file.get_pc());
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
@@ -394,9 +380,7 @@ namespace mips_emulator {
                         // BNEZALC
                         if (rt.u) {
                             reg_file.set_unsigned(31, reg_file.get_pc());
-                            reg_file.set_pc(
-                                reg_file.get_pc() +
-                                (sign_ext_imm(instr.itype.imm) * 4));
+                            reg_file.set_pc(branch_target);
                         }
                     }
                     else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&

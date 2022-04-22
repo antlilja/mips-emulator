@@ -573,7 +573,7 @@ TEST_CASE("pop06 - compact") {
     SECTION("BGEZALC - Branch") { // rs = rt != 0
         test({10, 10, (uint32_t)(0), (uint32_t)(0), true, true});
         test({10, 10, 1, 1, true, true});
-        test({10, 15, INT32_MAX, INT32_MAX, true, true});
+        test({10, 10, INT32_MAX, INT32_MAX, true, true});
     }
 
     SECTION("BGEZALC - No Branch") { // rs = rt != 0
@@ -613,7 +613,7 @@ TEST_CASE("pop07 - compact") {
     SECTION("BLTZALC - No Branch") { // rs = rt != 0
         test({10, 10, (uint32_t)(0), (uint32_t)(0), false, false});
         test({10, 10, 1, 1, false, false});
-        test({10, 15, INT32_MAX, INT32_MAX, false, false});
+        test({10, 10, INT32_MAX, INT32_MAX, false, false});
     }
 
     SECTION("BLTZALC - Branch") { // rs = rt != 0
@@ -633,3 +633,4 @@ TEST_CASE("pop07 - compact") {
         test({5, 10, 0, 0x1000, true, false});
     }
 }
+

@@ -33,7 +33,7 @@ namespace mips_emulator {
             e_special3_rtype,
             e_regimm_itype,
             e_pcrel_itype,
-            e_pcrel_2bittype,
+            e_pcrel_specialtype,
         };
 
         enum class Func : uint8_t {
@@ -186,12 +186,15 @@ namespace mips_emulator {
         };
 
         // regimm function types are dependent on value in bits 16 to 20
-        // The first two instructions are solely dependent on value in bits 19 to 20
         enum class PCrelITypeOp : uint8_t {
-            e_addiupc = 0,
-            e_lwpc = 1,
             e_auipc = 0b11110,
             e_aluipc = 0b11111,
+        };
+
+        // regimm function types are dependent on value in bits 19 to 20
+        enum class PCrelSpecialTypeOp : uint8_t {
+            e_addiupc = 0,
+            e_lwpc = 1,
         };
 
         // Opcode enum for special3 r-type like instructions
@@ -299,7 +302,7 @@ namespace mips_emulator {
         // pcrel structs
         // similar to itype instructions but all share the same op-code
         // function type is determined by bits 19-20
-        PACKED(struct PCrel2BitType {
+        PACKED(struct PCrelSpecialType {
             uint32_t imm : 19;
             uint32_t op : 2;
             uint32_t rs : 5;
@@ -327,8 +330,8 @@ namespace mips_emulator {
                       "Instruction::RegimmIType bitfield is not 4 bytes in size");
         static_assert(sizeof(PCrelIType) == 4,
                       "Instruction::PCrelIType bitfield is not 4 bytes in size");
-        static_assert(sizeof(PCrel2BitType) == 4,
-                      "Instruction::PCrel2BitType bitfield is not 4 bytes in size");
+        static_assert(sizeof(PCrelSpecialType) == 4,
+                      "Instruction::PCrelSpecialType bitfield is not 4 bytes in size");
 
         // R-Type
         Instruction(const Func func, const RegisterName rd,
@@ -434,6 +437,15 @@ namespace mips_emulator {
             pcrel_itype.imm = immediate;
         }
 
+        // PCrel I-Type
+        Instruction(const PCrelSpecialTypeOp opcode, const RegisterName rs,
+                    const uint32_t immediate) {
+            pcrel_specialtype.pcrel = static_cast<uint8_t>(PCrelOpcode::e_pcrel);
+            pcrel_specialtype.rs = static_cast<uint8_t>(rs);
+            pcrel_specialtype.op = static_cast<uint8_t>(opcode);
+            pcrel_specialtype.imm = immediate;
+        }
+
         inline Type get_type() const {
             if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {
                 if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
@@ -456,7 +468,7 @@ namespace mips_emulator {
                      static_cast<uint8_t>(PCrelOpcode::e_pcrel)) {
                 if ((pcrel_itype.op & 0b10) != 0) return Type::e_pcrel_itype;
 
-                return Type::e_pcrel_2bittype;
+                return Type::e_pcrel_specialtype;
             }
 
             switch (general.op & ~1) {
@@ -482,7 +494,7 @@ namespace mips_emulator {
         RegimmIType regimm_itype;
 
         PCrelIType pcrel_itype;
-        PCrel2BitType pcrel_2bittype;
+        PCrelSpecialType pcrel_specialtype;
 
     }; // namespace mips_emulator
 

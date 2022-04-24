@@ -27,6 +27,25 @@ namespace mips_emulator {
         };
     };
 
+    template <typename Value>
+    class Result<Value, void> {
+    public:
+        [[nodiscard]] bool is_error() const { return is_err; }
+
+        [[nodiscard]] Value get_value() const { return value; }
+
+        Result() { is_err = true; }
+
+        Result(Value val) {
+            is_err = false;
+            value = val;
+        }
+
+    private:
+        bool is_err;
+        Value value;
+    };
+
     template <typename Error>
     class Result<void, Error> {
     public:

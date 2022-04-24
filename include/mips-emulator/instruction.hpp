@@ -1,5 +1,6 @@
 #pragma once
 #include "mips-emulator/register_name.hpp"
+#include "mips-emulator/result.hpp"
 
 #include <cstdint>
 
@@ -159,16 +160,6 @@ namespace mips_emulator {
             e_cmp_condn_d = 25,
         };
 
-        // Opcode for special3 instruction
-        enum class Special3Opcode : uint8_t {
-            e_special3 = 0b011111,
-        };
-
-        // Opcode for regimm instruction
-        enum class RegimmOpcode : uint8_t {
-            e_regimm = 1,
-        };
-
         // Func enum for special3 instructions
         enum class Special3Func : uint8_t {
             e_ext = 0,
@@ -295,6 +286,10 @@ namespace mips_emulator {
             sizeof(RegimmIType) == 4,
             "Instruction::RegimmIType bitfield is not 4 bytes in size");
 
+        static constexpr uint8_t RTYPE_OPCODE = 0;
+        static constexpr uint8_t REGIMM_OPCODE = 1;
+        static constexpr uint8_t SPECIAL3_OPCODE = 31;
+
         // R-Type
         Instruction(const Func func, const RegisterName rd,
                     const RegisterName rs, const RegisterName rt,
@@ -377,8 +372,7 @@ namespace mips_emulator {
             special3_rtype.rd = static_cast<uint8_t>(rd);
             special3_rtype.rt = static_cast<uint8_t>(rt);
             special3_rtype.rs = 0;
-            special3_rtype.special3 =
-                static_cast<uint8_t>(Special3Opcode::e_special3);
+            special3_rtype.special3 = SPECIAL3_OPCODE;
         }
         Instruction(const Special3Func func, const uint8_t extra,
                     const uint8_t rd, const RegisterName rs,
@@ -388,8 +382,7 @@ namespace mips_emulator {
             special3_rtype.rd = rd;
             special3_rtype.rs = static_cast<uint8_t>(rs);
             special3_rtype.rt = static_cast<uint8_t>(rt);
-            special3_rtype.special3 =
-                static_cast<uint8_t>(Special3Opcode::e_special3);
+            special3_rtype.special3 = SPECIAL3_OPCODE;
         }
 
         // Regimm I-Type
@@ -398,33 +391,62 @@ namespace mips_emulator {
             regimm_itype.op = static_cast<uint8_t>(opcode);
             regimm_itype.rs = static_cast<uint8_t>(rs);
             regimm_itype.imm = immediate;
-            regimm_itype.regimm = 1;
+            regimm_itype.regimm = REGIMM_OPCODE;
         }
 
-        inline Type get_type() const {
-            if (general.op == static_cast<uint8_t>(COPOpcode::e_cop1)) {
-                if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
+        inline Result<Type, void> get_type() const {
+            switch (general.op) {
+                    // R-Type
+                case RTYPE_OPCODE:
+                    return Type::e_rtype;
 
-                if (fpu_rtype.fmt & 0b01000) return Type::e_fpu_btype;
+                    // J-Type
+                case 2:
+                case 3:
+                    return Type::e_jtype;
 
-                return Type::e_fpu_ttype;
-            }
-            else if (general.op ==
-                     static_cast<uint8_t>(Special3Opcode::e_special3)) {
-                // TODO, handle other types
-                return Type::e_special3_rtype;
-            }
-            else if (general.op ==
-                     static_cast<uint8_t>(RegimmOpcode::e_regimm)) {
-                // TODO, handle other types
-                return Type::e_regimm_itype;
+                    // I-Type
+                case 4:
+                case 6:
+                case 5:
+                case 7:
+                case 8:
+                case 9:
+                case 15:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 32:
+                case 33:
+                case 36:
+                case 37:
+                case 35:
+                case 40:
+                case 41:
+                case 43:
+                    return Type::e_itype;
+
+                    // REGIMM
+                case REGIMM_OPCODE:
+                    return Type::e_regimm_itype;
+
+                    // Special3
+                case SPECIAL3_OPCODE:
+                    return Type::e_special3_rtype;
+
+                    // Coprocessor 1
+                case 17: {
+                    if (fpu_rtype.fmt & 0b10000) return Type::e_fpu_rtype;
+
+                    if (fpu_rtype.fmt & 0b01000) return Type::e_fpu_btype;
+
+                    return Type::e_fpu_ttype;
+                }
             }
 
-            switch (general.op & ~1) {
-                case 0: return Type::e_rtype;
-                case 2: return Type::e_jtype;
-            }
-            return Type::e_itype;
+            return Result<Type, void>();
         }
 
         uint32_t raw = 0;

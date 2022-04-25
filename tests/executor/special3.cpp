@@ -27,7 +27,7 @@ TEST_CASE("ext", "[Executor]") {
                                     RegisterName::e_t1, RegisterName::e_t0);
 
             const bool no_error =
-                Executor::handle_special3_rtype_instr(instr, reg_file);
+                Executor::handle_special3_type_ext_instr(instr, reg_file);
             REQUIRE(no_error);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[3]);
@@ -55,7 +55,7 @@ TEST_CASE("ins", "[Executor]") {
                                     RegisterName::e_t1, RegisterName::e_t0);
 
             const bool no_error =
-                Executor::handle_special3_rtype_instr(instr, reg_file);
+                Executor::handle_special3_type_ins_instr(instr, reg_file);
             REQUIRE(no_error);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[4]);
@@ -65,7 +65,7 @@ TEST_CASE("ins", "[Executor]") {
 
 TEST_CASE("bitswap", "[Executor") {
     using R = Instruction::Special3Func;
-    using BSHFLOp = Instruction::Special3BSHFLTypeOp;
+    using BSHFLOp = Instruction::Special3BSHFLFunc;
 
     SECTION("swaps") {
         uint32_t cases[][2] = {{0, 0},
@@ -86,7 +86,7 @@ TEST_CASE("bitswap", "[Executor") {
                                     RegisterName::e_t0, RegisterName::e_t1);
 
             const bool no_error =
-                Executor::handle_special3_rtype_instr(instr, reg_file);
+                Executor::handle_special3_type_bshfl_instr(instr, reg_file);
             REQUIRE(no_error);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[1]);
@@ -96,7 +96,7 @@ TEST_CASE("bitswap", "[Executor") {
 
 TEST_CASE("wsbh", "[Executor]") {
     using R = Instruction::Special3Func;
-    using BSHFLOp = Instruction::Special3BSHFLTypeOp;
+    using BSHFLOp = Instruction::Special3BSHFLFunc;
 
     SECTION("Swapping") {
         RegisterFile reg_file;
@@ -108,7 +108,7 @@ TEST_CASE("wsbh", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x00FF00FF);
@@ -124,7 +124,7 @@ TEST_CASE("wsbh", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0);
@@ -140,7 +140,7 @@ TEST_CASE("wsbh", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == ~0U);
@@ -149,7 +149,7 @@ TEST_CASE("wsbh", "[Executor]") {
 
 TEST_CASE("seh", "[Executor]") {
     using R = Instruction::Special3Func;
-    using BSHFLOp = Instruction::Special3BSHFLTypeOp;
+    using BSHFLOp = Instruction::Special3BSHFLFunc;
 
     SECTION("Leading 1") {
         RegisterFile reg_file;
@@ -160,7 +160,7 @@ TEST_CASE("seh", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0xFFFFF0F0);
@@ -175,7 +175,7 @@ TEST_CASE("seh", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x7ff1);
@@ -184,7 +184,7 @@ TEST_CASE("seh", "[Executor]") {
 
 TEST_CASE("seb", "[Executor]") {
     using R = Instruction::Special3Func;
-    using BSHFLOp = Instruction::Special3BSHFLTypeOp;
+    using BSHFLOp = Instruction::Special3BSHFLFunc;
 
     SECTION("Leading 1") {
         RegisterFile reg_file;
@@ -195,7 +195,7 @@ TEST_CASE("seb", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0xFFFFFFF8);
@@ -210,7 +210,7 @@ TEST_CASE("seb", "[Executor]") {
                                 RegisterName::e_t1);
 
         const bool no_error =
-            Executor::handle_special3_rtype_instr(instr, reg_file);
+            Executor::handle_special3_type_bshfl_instr(instr, reg_file);
         REQUIRE(no_error);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x0000007F);

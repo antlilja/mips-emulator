@@ -553,6 +553,102 @@ namespace mips_emulator {
         }
 
         template <typename Memory>
+        [[nodiscard]] inline static bool
+        handle_pcrel_type1_instr(const Instruction instr,
+                                 RegisterFile& reg_file, Memory& memory) {
+
+            using Register = RegisterFile::Register;
+            using Func = Instruction::PCRelFunc1;
+
+            // Both instructions require the same address calculation
+            auto address = (static_cast<uint32_t>(instr.pcrel_type1.imm) << 2) +
+                           reg_file.get_pc();
+
+            // Sign extend
+            address |= 1023 * ((address >> 21) & 1);
+
+            const Func func = static_cast<Func>(instr.pcrel_type1.func);
+            switch (func) {
+                    /*
+                      This instruction performs a PC-relative address
+                      calculation. The 19-bit immediate is shifted left by 2
+                      bits, sign- extended, and added to the address of the
+                      ADDIUPC instruction. The result is placed in GPR rs.
+                     */
+                case Func::e_addiupc: {
+                    reg_file.set_unsigned(instr.pcrel_type1.rs, address);
+                    break;
+                }
+
+                    /*
+                      The offset is shifted left by 2 bits, sign-extended, and
+                      added to the address of the LWPC instruction. The contents
+                      of the 32-bit word at the memory location specified by the
+                      aligned effective address are fetched, sign- extended to
+                      the GPR register length if necessary, and placed in GPR
+                      rs.
+                     */
+                case Func::e_lwpc: {
+                    const auto read_result =
+                        memory.template read<uint32_t>(address);
+                    if (read_result.is_error()) return false;
+
+                    reg_file.set_unsigned(instr.pcrel_type1.rs,
+                                          read_result.get_value());
+                    break;
+                }
+                default: return false;
+            }
+
+            return true;
+        }
+
+        [[nodiscard]] inline static bool
+        handle_pcrel_type2_instr(const Instruction instr,
+                                 RegisterFile& reg_file) {
+
+            using Register = RegisterFile::Register;
+            using Func = Instruction::PCRelFunc2;
+
+            // Both instructions require the same start of address calculation
+            const auto address =
+                (static_cast<uint32_t>(instr.pcrel_type1.imm) << 16) +
+                reg_file.get_pc();
+
+            const Func func = static_cast<Func>(instr.pcrel_type1.func);
+            switch (func) {
+                    /*
+                      This instruction performs a PC-relative address
+                      calculation. The 16-bit immediate is shifted left by 16
+                      bits, sign-extended, and added to the address of the
+                      ALUIPC instruction. The low 16 bits of the result are
+                      cleared, that is the result is aligned on a 64K boundary.
+                      The result is placed in GPR rs.
+                     */
+                case Func::e_aluipc: {
+                    // Store address but aligned to 64K boundary
+                    reg_file.set_unsigned(instr.pcrel_type2.rs,
+                                          address & 0xffff0000);
+                    break;
+                }
+
+                    /*
+                      This instruction performs a PC-relative address
+                      calculation. The 16-bit immediate is shifted left by 16
+                      bits, sign-extended, and added to the address of the
+                      AUIPC instruction. The result is placed in GPR rs.
+                     */
+                case Func::e_auipc: {
+                    reg_file.set_unsigned(instr.pcrel_type2.rs, address);
+                    break;
+                }
+                default: return false;
+            }
+
+            return true;
+        }
+
+        template <typename Memory>
         [[nodiscard]] inline static bool step(RegisterFile& reg_file,
                                               Memory& memory) {
             using Type = Instruction::Type;
@@ -590,6 +686,12 @@ namespace mips_emulator {
                     return handle_special3_rtype_instr(instr, reg_file);
                 case Type::e_regimm_itype:
                     return handle_regimm_itype_instr(instr, reg_file);
+
+                    // PC relative
+                case Type::e_pcrel_type1:
+                    return handle_pcrel_type1_instr(instr, reg_file, memory);
+                case Type::e_pcrel_type2:
+                    return handle_pcrel_type2_instr(instr, reg_file);
 
                 default: return false;
             }

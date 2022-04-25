@@ -5,9 +5,15 @@
 
 using namespace mips_emulator;
 
+using Type = Instruction::Type;
 using Func = Instruction::Func;
 using IOp = Instruction::ITypeOpcode;
 using JOp = Instruction::JTypeOpcode;
+
+bool instr_type_matches(Instruction instr, Type type) {
+    const auto instr_type = instr.get_type();
+    return !instr_type.is_error() && instr_type.get_value() == type;
+}
 
 TEST_CASE("R-Type instruction", "[Instruction]") {
 
@@ -26,7 +32,7 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
             const auto instr = Instruction(
                 f, RegisterName::e_0, RegisterName::e_0, RegisterName::e_0);
 
-            REQUIRE(instr.get_type() == Instruction::Type::e_rtype);
+            REQUIRE(instr_type_matches(instr, Instruction::Type::e_rtype));
         }
     }
 
@@ -34,7 +40,7 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
         const Instruction instr(Func::e_add, RegisterName::e_0,
                                 RegisterName::e_0, RegisterName::e_0);
 
-        REQUIRE(instr.get_type() == Instruction::Type::e_rtype);
+        REQUIRE(instr_type_matches(instr, Instruction::Type::e_rtype));
         REQUIRE(instr.raw == 0x20);
     }
 
@@ -42,7 +48,7 @@ TEST_CASE("R-Type instruction", "[Instruction]") {
         const Instruction instr(Func::e_add, RegisterName::e_t0,
                                 RegisterName::e_t5, RegisterName::e_a0);
 
-        REQUIRE(instr.get_type() == Instruction::Type::e_rtype);
+        REQUIRE(instr_type_matches(instr, Instruction::Type::e_rtype));
         REQUIRE(instr.raw == 0x01a44020);
     }
 
@@ -102,12 +108,13 @@ TEST_CASE("I-Type instruction", "[Instruction]") {
             const auto instr_zero =
                 Instruction(i, RegisterName::e_0, RegisterName::e_0, 0);
 
-            REQUIRE(instr_zero.get_type() == Instruction::Type::e_itype);
+            REQUIRE(instr_type_matches(instr_zero, Instruction::Type::e_itype));
 
             const auto instr_non_zero =
                 Instruction(i, RegisterName::e_t0, RegisterName::e_t5, 0xffff);
 
-            REQUIRE(instr_non_zero.get_type() == Instruction::Type::e_itype);
+            REQUIRE(
+                instr_type_matches(instr_non_zero, Instruction::Type::e_itype));
         }
     }
 
@@ -134,7 +141,7 @@ TEST_CASE("J-Type instruction", "[Instruction]") {
         for (auto const j : jops) {
             const auto instr = Instruction(j, 0);
 
-            REQUIRE(instr.get_type() == Instruction::Type::e_jtype);
+            REQUIRE(instr_type_matches(instr, Instruction::Type::e_jtype));
         }
     }
 }
@@ -150,7 +157,7 @@ TEST_CASE("FPU R Type", "[Instruction]") {
                      R::e_fmt_l, R::e_cmp_condn_s, R::e_cmp_condn_d};
         for (auto const v : instr) {
             const auto inst = Instruction(v, 0, 2, 3, Func::e_floor_l);
-            REQUIRE(inst.get_type() == Type::e_fpu_rtype);
+            REQUIRE(instr_type_matches(inst, Type::e_fpu_rtype));
         }
     }
 
@@ -178,7 +185,7 @@ TEST_CASE("FPU T Type", "[Instruction]") {
         T instr[] = {T::e_cf, T::e_ct, T::e_mf, T::e_mfh, T::e_mt, T::e_mth};
         for (auto const v : instr) {
             const auto inst = Instruction(v, RegisterName::e_k0, 0);
-            REQUIRE(inst.get_type() == Type::e_fpu_ttype);
+            REQUIRE(instr_type_matches(inst, Type::e_fpu_ttype));
         }
     }
 
@@ -201,23 +208,51 @@ TEST_CASE("FPU B Type", "[Instruction]") {
         B instr[] = {B::e_bc1eqz, B::e_bc1nez};
         for (auto const v : instr) {
             const auto inst = Instruction(v, 31, 25);
-            REQUIRE(inst.get_type() == Type::e_fpu_btype);
+            REQUIRE(instr_type_matches(inst, Type::e_fpu_btype));
         }
     }
 }
 
-TEST_CASE("Special3 R Type", "[Instruction]") {
+TEST_CASE("Special3 Type", "[Instruction]") {
     using Type = Instruction::Type;
     using R = Instruction::Special3Func;
-    using ROp = Instruction::Special3RTypeOp;
+    using ROp = Instruction::Special3BSHFLTypeOp;
 
-    SECTION("get_type") {
+    SECTION("get_type ext") {
+        // EXT, rt, rs, msbd(rd), lsb(extra), func
+        const auto inst =
+            Instruction(R::e_ext, 0, 1, RegisterName::e_t0, RegisterName::e_t1);
+        REQUIRE(instr_type_matches(inst, Type::e_special3_rtype));
+    }
+
+    // Note, the size parameter is stored as size-1 in the machine instruction
+    SECTION("ext $t0 $t1 0 1") {
+        Instruction inst(R::e_ext, 0, 0, RegisterName::e_t1,
+                         RegisterName::e_t0);
+        REQUIRE(inst.raw == 0x7D280000);
+    }
+
+    SECTION("get_type ins") {
+        // INS, rt, rs, msb(rd), lsb(extra), func
+        const auto inst =
+            Instruction(R::e_ins, 0, 0, RegisterName::e_t0, RegisterName::e_t1);
+        REQUIRE(instr_type_matches(inst, Type::e_special3_rtype));
+    }
+
+    // Note, the size parameter is stored as size-1 in the machine instruction
+    SECTION("ins $t0 $t1 0 1") {
+        Instruction inst(R::e_ins, 0, 0, RegisterName::e_t1,
+                         RegisterName::e_t0);
+        REQUIRE(inst.raw == 0x7D280004);
+    }
+
+    SECTION("get_type bshfl") {
         ROp instr[] = {ROp::e_bitswap, ROp::e_wsbh, ROp::e_seb, ROp::e_seh};
 
         for (auto const v : instr) {
             const auto inst = Instruction(R::e_bshfl, v, RegisterName::e_t0,
                                           RegisterName::e_t1);
-            REQUIRE(inst.get_type() == Type::e_special3_rtype);
+            REQUIRE(instr_type_matches(inst, Type::e_special3_rtype));
         }
     }
 
@@ -248,7 +283,6 @@ TEST_CASE("Special3 R Type", "[Instruction]") {
 
 TEST_CASE("Regimm I Type", "[Instruction]") {
     using Type = Instruction::Type;
-    using I = Instruction::RegimmOpcode;
     using IOp = Instruction::RegimmITypeOp;
 
     SECTION("get_type") {
@@ -256,7 +290,7 @@ TEST_CASE("Regimm I Type", "[Instruction]") {
 
         for (auto const v : instr) {
             const auto inst = Instruction(v, RegisterName::e_t0, 3);
-            REQUIRE(inst.get_type() == Type::e_regimm_itype);
+            REQUIRE(instr_type_matches(inst, Type::e_regimm_itype));
         }
     }
 

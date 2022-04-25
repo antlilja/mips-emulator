@@ -9,16 +9,16 @@ namespace mips_emulator {
     class RuntimeStaticMemory
         : public Memory<RuntimeStaticMemory<MMIOHandler>, MMIOHandler> {
     public:
-        RuntimeStaticMemory(const uint32_t size,
+        RuntimeStaticMemory(const uint32_t size, const uint32_t offset = 0,
                             std::shared_ptr<MMIOHandler> mmio = nullptr)
             : Memory<RuntimeStaticMemory<MMIOHandler>, MMIOHandler>(
-                  std::move(mmio)),
+                  offset, std::move(mmio)),
               memory(size) {}
 
-        RuntimeStaticMemory(std::vector<uint8_t> mem,
+        RuntimeStaticMemory(std::vector<uint8_t> mem, const uint32_t offset = 0,
                             std::shared_ptr<MMIOHandler> mmio = nullptr)
             : Memory<RuntimeStaticMemory<MMIOHandler>, MMIOHandler>(
-                  std::move(mmio)),
+                  offset, std::move(mmio)),
               memory(std::move(mem)) {}
 
         uint8_t* get_memory() { return &memory[0]; }

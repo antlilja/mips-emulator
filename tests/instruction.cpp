@@ -215,67 +215,68 @@ TEST_CASE("FPU B Type", "[Instruction]") {
 
 TEST_CASE("Special3 Type", "[Instruction]") {
     using Type = Instruction::Type;
-    using R = Instruction::Special3Func;
-    using ROp = Instruction::Special3BSHFLTypeOp;
+    using Func = Instruction::Special3Func;
+    using BSHFLFunc = Instruction::Special3BSHFLFunc;
 
     SECTION("get_type ext") {
         // EXT, rt, rs, msbd(rd), lsb(extra), func
-        const auto inst =
-            Instruction(R::e_ext, 0, 1, RegisterName::e_t0, RegisterName::e_t1);
-        REQUIRE(instr_type_matches(inst, Type::e_special3_rtype));
+        const auto inst = Instruction(Func::e_ext, 0, 1, RegisterName::e_t0,
+                                      RegisterName::e_t1);
+        REQUIRE(instr_type_matches(inst, Type::e_special3_type_ext));
     }
 
     // Note, the size parameter is stored as size-1 in the machine instruction
     SECTION("ext $t0 $t1 0 1") {
-        Instruction inst(R::e_ext, 0, 0, RegisterName::e_t1,
+        Instruction inst(Func::e_ext, 0, 0, RegisterName::e_t1,
                          RegisterName::e_t0);
         REQUIRE(inst.raw == 0x7D280000);
     }
 
     SECTION("get_type ins") {
         // INS, rt, rs, msb(rd), lsb(extra), func
-        const auto inst =
-            Instruction(R::e_ins, 0, 0, RegisterName::e_t0, RegisterName::e_t1);
-        REQUIRE(instr_type_matches(inst, Type::e_special3_rtype));
+        const auto inst = Instruction(Func::e_ins, 0, 0, RegisterName::e_t0,
+                                      RegisterName::e_t1);
+        REQUIRE(instr_type_matches(inst, Type::e_special3_type_ins));
     }
 
     // Note, the size parameter is stored as size-1 in the machine instruction
     SECTION("ins $t0 $t1 0 1") {
-        Instruction inst(R::e_ins, 0, 0, RegisterName::e_t1,
+        Instruction inst(Func::e_ins, 0, 0, RegisterName::e_t1,
                          RegisterName::e_t0);
         REQUIRE(inst.raw == 0x7D280004);
     }
 
     SECTION("get_type bshfl") {
-        ROp instr[] = {ROp::e_bitswap, ROp::e_wsbh, ROp::e_seb, ROp::e_seh};
+        BSHFLFunc instr[] = {BSHFLFunc::e_bitswap, BSHFLFunc::e_wsbh,
+                             BSHFLFunc::e_seb, BSHFLFunc::e_seh};
 
         for (auto const v : instr) {
-            const auto inst = Instruction(R::e_bshfl, v, RegisterName::e_t0,
+            const auto inst = Instruction(Func::e_bshfl, v, RegisterName::e_t0,
                                           RegisterName::e_t1);
-            REQUIRE(instr_type_matches(inst, Type::e_special3_rtype));
+            REQUIRE(instr_type_matches(inst, Type::e_special3_type_bshfl));
         }
     }
 
     SECTION("bitswap $t0 $t1") {
-        Instruction t(R::e_bshfl, ROp::e_bitswap, RegisterName::e_t0,
+        Instruction t(Func::e_bshfl, BSHFLFunc::e_bitswap, RegisterName::e_t0,
                       RegisterName::e_t1);
         REQUIRE(t.raw == 0x7C094020);
     }
 
     SECTION("wsbh $t0 $t1") {
-        Instruction t(R::e_bshfl, ROp::e_wsbh, RegisterName::e_t0,
+        Instruction t(Func::e_bshfl, BSHFLFunc::e_wsbh, RegisterName::e_t0,
                       RegisterName::e_t1);
         REQUIRE(t.raw == 0x7c0940a0);
     }
 
     SECTION("seb $t0 $t1") {
-        Instruction t(R::e_bshfl, ROp::e_seb, RegisterName::e_t0,
+        Instruction t(Func::e_bshfl, BSHFLFunc::e_seb, RegisterName::e_t0,
                       RegisterName::e_t1);
         REQUIRE(t.raw == 0x7c094420);
     }
 
     SECTION("seh $t0 $t1") {
-        Instruction t(R::e_bshfl, ROp::e_seh, RegisterName::e_t0,
+        Instruction t(Func::e_bshfl, BSHFLFunc::e_seh, RegisterName::e_t0,
                       RegisterName::e_t1);
         REQUIRE(t.raw == 0x7c094620);
     }

@@ -216,6 +216,11 @@ namespace mips_emulator {
             const uint32_t ext = (~0U) << 16;
             return ((ext * ((imm >> 15) & 1)) | imm);
         }
+        template <typename T>
+        const uint32_t sign_ext_long_imm(const T imm) {
+            const uint32_t ext = (~0U) << 21;
+            return ((ext * ((imm >> 20) & 1)) | imm);
+        }
 
         [[nodiscard]] inline static bool
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
@@ -446,13 +451,42 @@ namespace mips_emulator {
                 }
 
                 case IOp::e_pop66: {
-                    // TODO
-                    // Maybe these should be their own Instruction type?????
+
+                    if (instr.itype.rs == 0) {
+                        // JIC
+                        reg_file.set_pc(reg_file.get(instr.itype.rt).u +
+                                        sign_ext_imm(instr.itype.imm));
+                    }
+                    else if (instr.longimm_itype.rs != 0) {
+                        // BEQZC
+                        if (reg_file.get(instr.longimm_itype.rs).u == 0) {
+
+                            reg_file.set_pc(
+                                reg_file.get_pc() +
+                                sign_ext_long_imm(instr.longimm_itype.imm) * 4);
+                        }
+                    }
+
                     break;
                 }
                 case IOp::e_pop76: {
-                    // TODO
-                    // Maybe these should be their own Instruction type?????
+
+                    if (instr.itype.rs == 0) {
+                        // JIALC
+                        reg_file.set_unsigned(31, reg_file.get_pc());
+                        reg_file.set_pc(reg_file.get(instr.itype.rt).u +
+                                        sign_ext_imm(instr.itype.imm));
+                    }
+                    else if (instr.longimm_itype.rs != 0) {
+                        // BNEZC
+                        if (reg_file.get(instr.longimm_itype.rs).u != 0) {
+
+                            reg_file.set_pc(
+                                reg_file.get_pc() +
+                                sign_ext_long_imm(instr.longimm_itype.imm) * 4);
+                        }
+                    }
+
                     break;
                 }
 
@@ -721,6 +755,7 @@ namespace mips_emulator {
             switch (instr_type.get_value()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
                 case Type::e_itype:
+                case Type::e_longimm_itype:
                     return handle_itype_instr(instr, reg_file, memory);
                 case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
                 case Type::e_fpu_rtype: {

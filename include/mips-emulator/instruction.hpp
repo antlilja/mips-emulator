@@ -33,6 +33,7 @@ namespace mips_emulator {
             e_fpu_ttype,
             e_special3_rtype,
             e_regimm_itype,
+            e_longimm_itype,
         };
 
         enum class Func : uint8_t {
@@ -270,6 +271,12 @@ namespace mips_emulator {
             uint32_t regimm : 6;
         });
 
+        PACKED(struct LongimmIType {
+            uint32_t imm : 21;
+            uint32_t rs : 5;
+            uint32_t op : 6;
+        });
+
         // Make sure internal structs are the same size
         static_assert(sizeof(General) == 4,
                       "Instruction::General bitfield is not 4 bytes in size");
@@ -450,6 +457,14 @@ namespace mips_emulator {
 
                     return Type::e_fpu_ttype;
                 }
+                case 62:
+                case 54:
+                    if (itype.rs != 0) {
+                        return Type::e_longimm_itype;
+                    }
+                    else {
+                        return Type::e_itype;
+                    }
             }
 
             return Result<Type, void>();
@@ -469,6 +484,7 @@ namespace mips_emulator {
         Special3RType special3_rtype;
 
         RegimmIType regimm_itype;
+        LongimmIType longimm_itype;
 
     }; // namespace mips_emulator
 

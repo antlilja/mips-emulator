@@ -713,3 +713,101 @@ TEST_CASE("pop27 - compact") {
         test({5, 10, (uint32_t)(-0x100), 0x1000, true, false});
     }
 }
+
+TEST_CASE("pop66 - compact") {
+    RegisterFile reg_file;
+    reg_file.set_pc(0x100);
+
+    SECTION("BEQZE  - no branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 1);
+
+        Instruction instr(IOp::e_pop66,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0x8);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100);
+    }
+
+    SECTION("BEQZE - branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 0);
+
+        Instruction instr(IOp::e_pop66,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0b11);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100 - 0b1100);
+    }
+
+    SECTION("JIC") { // rs == 0 JIC
+
+        reg_file.set_signed(RegisterName::e_t0, 0xbeef);
+
+        Instruction instr(IOp::e_pop66, RegisterName::e_t0, RegisterName::e_0,
+                          -0xf);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0xbee0);
+    }
+}
+
+TEST_CASE("pop76 - compact") {
+    RegisterFile reg_file;
+    reg_file.set_pc(0x100);
+
+    SECTION("BEQZE - no branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 0);
+
+        Instruction instr(IOp::e_pop76,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0x8);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100);
+    }
+
+    SECTION("BEQZE - branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 1);
+
+        Instruction instr(IOp::e_pop76,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0b11);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100 - 0b1100);
+    }
+
+    SECTION("JIALC") { // rs == 0 JIALC
+
+        reg_file.set_signed(RegisterName::e_t0, 0xbeef);
+
+        Instruction instr(IOp::e_pop76, RegisterName::e_t0, RegisterName::e_0,
+                          -0xf);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0xbee0);
+
+        REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x100);
+    }
+}

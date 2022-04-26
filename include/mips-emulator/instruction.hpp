@@ -439,6 +439,9 @@ namespace mips_emulator {
                 case 40:
                 case 41:
                 case 43:
+                case 24:
+                case 22:
+                case 23:
                     return Type::e_itype;
 
                     // REGIMM

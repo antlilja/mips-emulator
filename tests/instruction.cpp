@@ -280,6 +280,18 @@ TEST_CASE("Special3 Type", "[Instruction]") {
                       RegisterName::e_t1);
         REQUIRE(t.raw == 0x7c094620);
     }
+
+    SECTION("get_type align") {
+        Instruction t(Func::e_bshfl, BSHFLFunc::e_align_1, RegisterName::e_t0,
+                      RegisterName::e_t2, RegisterName::e_t1);
+        REQUIRE(instr_type_matches(t, Type::e_special3_type_bshfl));
+    }
+
+    SECTION("align $t0 $t1 $t2 1") {
+        Instruction t(Func::e_bshfl, BSHFLFunc::e_align_1, RegisterName::e_t0,
+                      RegisterName::e_t1, RegisterName::e_t2);
+        REQUIRE(t.raw == 0x7d2a4260);
+    }
 }
 
 TEST_CASE("Regimm I Type", "[Instruction]") {

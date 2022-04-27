@@ -147,6 +147,43 @@ TEST_CASE("wsbh", "[Executor]") {
     }
 }
 
+TEST_CASE("align", "[Executor") {
+    using R = Instruction::Special3Func;
+    using BSHFLOp = Instruction::Special3BSHFLFunc;
+
+    SECTION("aligns") {
+        uint32_t cases[][4] = {
+            {0x87654321, 0x12345678, static_cast<uint32_t>(BSHFLOp::e_align_0),
+             0x87654321},
+            {0x11111111, 0x22222222, static_cast<uint32_t>(BSHFLOp::e_align_2),
+             0x11112222},
+            {0x12345678, 0x87654321, static_cast<uint32_t>(BSHFLOp::e_align_3),
+             0x78876543},
+            {0x00000000, 0xffffffff, static_cast<uint32_t>(BSHFLOp::e_align_1),
+             0x000000ff},
+            {0xffffffff, 0x00000000, static_cast<uint32_t>(BSHFLOp::e_align_3),
+             0xff000000}};
+
+        for (auto& test : cases) {
+            RegisterFile reg_file;
+
+            reg_file.set_unsigned(RegisterName::e_t0, 0);
+            reg_file.set_unsigned(RegisterName::e_t1, test[0]);
+            reg_file.set_unsigned(RegisterName::e_t2, test[1]);
+
+            const Instruction instr(R::e_bshfl, static_cast<BSHFLOp>(test[2]),
+                                    RegisterName::e_t0, RegisterName::e_t2,
+                                    RegisterName::e_t1);
+
+            const bool no_error =
+                Executor::handle_special3_type_bshfl_instr(instr, reg_file);
+            REQUIRE(no_error);
+
+            REQUIRE(reg_file.get(RegisterName::e_t0).u == test[3]);
+        }
+    }
+}
+
 TEST_CASE("seh", "[Executor]") {
     using R = Instruction::Special3Func;
     using BSHFLOp = Instruction::Special3BSHFLFunc;

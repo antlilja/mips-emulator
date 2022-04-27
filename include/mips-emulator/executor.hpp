@@ -447,6 +447,30 @@ namespace mips_emulator {
                                               ((rt.u & 0xFF000000) >> 8));
                     break;
                 }
+                case Func::e_align_0:
+                case Func::e_align_1:
+                case Func::e_align_2:
+                case Func::e_align_3: {
+                    // Concatenates two GPR's, and extracts a contiguous subset
+                    // at a byte position
+
+                    // Align is a special case were the func field is in reality
+                    // 3 bits and the byte position is stored in the remaining 2
+                    // lower bits
+                    const uint8_t bp = (instr.special3_type_bshfl.func & 0x3);
+
+                    const Register rs =
+                        reg_file.get(instr.special3_type_bshfl.rs);
+
+                    // With bp = 0 align should act like a rd = rt register
+                    // move, however right shifting by 32 doesn't return 0 so
+                    // doing this
+                    const auto lo = (bp == 0) ? 0 : (rs.u >> (8 * (4 - bp)));
+
+                    reg_file.set_unsigned(instr.special3_type_bshfl.rd,
+                                          (rt.u << (8 * bp)) | lo);
+                    break;
+                }
                 case Func::e_seb: {
                     // Sign-extend Byte
                     reg_file.set_unsigned(instr.special3_type_bshfl.rd,

@@ -37,6 +37,7 @@ namespace mips_emulator {
             e_regimm_itype,
             e_pcrel_type1,
             e_pcrel_type2,
+            e_longimm_itype,
         };
 
         enum class Func : uint8_t {
@@ -107,10 +108,7 @@ namespace mips_emulator {
 
         enum class ITypeOpcode : uint8_t {
             e_beq = 4,
-            e_blez = 6,
             e_bne = 5,
-            e_bgtz = 7,
-            e_addi = 8,
             e_addiu = 9,
             e_aui = 15,
             e_slti = 10,
@@ -126,6 +124,15 @@ namespace mips_emulator {
             e_lh = 0b100001,
             e_lhu = 0b100101,
             e_sh = 0b101001,
+            e_pop06 = 0b000110,
+            e_pop07 = 0b000111,
+            e_pop10 = 0b001000,
+            e_pop26 = 0b010110,
+            e_pop27 = 0b010111,
+            e_pop30 = 0b011000,
+            e_pop66 = 0b110110,
+            e_pop76 = 0b111110,
+
         };
 
         enum class JTypeOpcode : uint8_t {
@@ -315,6 +322,12 @@ namespace mips_emulator {
             uint32_t func : 5;
             uint32_t rs : 5;
             uint32_t pcrel : 6;
+        });
+        
+        PACKED(struct LongimmIType {
+            uint32_t imm : 21;
+            uint32_t rs : 5;
+            uint32_t op : 6;
         });
 
         // Make sure internal structs are the same size
@@ -513,6 +526,9 @@ namespace mips_emulator {
                 case 40:
                 case 41:
                 case 43:
+                case 24:
+                case 22:
+                case 23:
                     return Type::e_itype;
 
                     // REGIMM
@@ -550,6 +566,14 @@ namespace mips_emulator {
 
                     return Type::e_fpu_ttype;
                 }
+                case 62:
+                case 54:
+                    if (itype.rs != 0) {
+                        return Type::e_longimm_itype;
+                    }
+                    else {
+                        return Type::e_itype;
+                    }
             }
 
             return Result<Type, void>();
@@ -572,6 +596,7 @@ namespace mips_emulator {
         Special3TypeINS special3_type_ins;
 
         RegimmIType regimm_itype;
+        LongimmIType longimm_itype;
 
         PCRelType1 pcrel_type1;
         PCRelType2 pcrel_type2;

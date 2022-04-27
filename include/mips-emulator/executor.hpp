@@ -216,6 +216,11 @@ namespace mips_emulator {
             const uint32_t ext = (~0U) << 16;
             return ((ext * ((imm >> 15) & 1)) | imm);
         }
+        template <typename T>
+        const uint32_t sign_ext_long_imm(const T imm) {
+            const uint32_t ext = (~0U) << 21;
+            return ((ext * ((imm >> 20) & 1)) | imm);
+        }
 
         [[nodiscard]] inline static bool
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
@@ -227,47 +232,24 @@ namespace mips_emulator {
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
+            // set PC after successful branch
+            const uint32_t branch_target =
+                reg_file.get_pc() + (sign_ext_imm(instr.itype.imm) * 4);
+
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                        reg_file.delayed_branch(branch_target);
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                        reg_file.delayed_branch(branch_target);
                     }
                     break;
                 }
 
-                case IOp::e_blez: {
-                    if (rs.s <= 0) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
-                    }
-                    break;
-                }
-
-                case IOp::e_bgtz: {
-                    if (rs.s > 0) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
-                    }
-                    break;
-                }
-
-                case IOp::e_addi: {
-                    reg_file.set_signed(instr.itype.rt,
-                                        rs.s + sign_ext_imm(instr.itype.imm));
-                    break;
-                }
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u + sign_ext_imm(instr.itype.imm));
@@ -304,6 +286,207 @@ namespace mips_emulator {
                 case IOp::e_xori: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u ^ instr.itype.imm);
+                    break;
+                }
+
+                //  HERE LIES MADNESS... i hate POP
+                case IOp::e_pop06: {
+                    if (instr.itype.rt == 0) {
+                        // BLEZ
+                        if (rs.s <= 0) {
+                            reg_file.delayed_branch(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BLEZALC
+                        if (rt.s <= 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == instr.itype.rt &&
+                             instr.itype.rt != 0) {
+                        // BGEZALC
+                        if (rt.s >= 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != instr.itype.rt &&
+                             instr.itype.rs != 0 && instr.itype.rt != 0) {
+                        // BGEUC
+                        if (rs.u >= rt.u) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+                case IOp::e_pop07: {
+                    if (instr.itype.rt == 0) {
+                        // BGTZ
+                        if (rs.s > 0) {
+                            reg_file.delayed_branch(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BGTZALC
+                        if (rt.s > 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == instr.itype.rt &&
+                             instr.itype.rt != 0) {
+                        // BLTZALC
+                        if (rt.s < 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != instr.itype.rt &&
+                             instr.itype.rs != 0 && instr.itype.rt != 0) {
+                        // BLTUC
+                        if (rs.u < rt.u) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+
+                case IOp::e_pop10: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
+                        instr.itype.rs < instr.itype.rt) { // rs < rt???????
+                        // BEQZALC
+                        if (!rt.u) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rs <
+                                 instr.itype.rt) { // rs < rt???????
+                        // BEQC
+                        if (rt.u == rs.u) reg_file.set_pc(branch_target);
+                    }
+                    else if (instr.itype.rs >= instr.itype.rt) {
+                        // BOVC
+
+                        const bool carry = rs.u + rt.u < rs.u;
+                        const bool is_signed = ((rs.u + rt.u) & 0x80000000) > 0;
+                        const bool sum_overflow = carry != is_signed;
+                        if (sum_overflow) reg_file.set_pc(branch_target);
+                    }
+                    break;
+                }
+                case IOp::e_pop30: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
+                        instr.itype.rs < instr.itype.rt) {
+
+                        // BNEZALC
+                        if (rt.u) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rs < instr.itype.rt) {
+                        // BNEC
+                        if (rt.u != rs.u) reg_file.set_pc(branch_target);
+                    }
+                    else if (instr.itype.rs >= instr.itype.rt) {
+                        // BNVC
+                        const bool carry = rs.u + rt.u < rs.u;
+                        const bool is_signed = ((rs.u + rt.u) & 0x80000000) > 0;
+                        const bool sum_overflow = carry != is_signed;
+                        if (!sum_overflow) reg_file.set_pc(branch_target);
+                    }
+                    break;
+                }
+
+                case IOp::e_pop26: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BLEZC
+                        if (rt.s <= 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt == instr.itype.rs) {
+                        // BGEZC
+                        if (rt.s >= 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt != instr.itype.rs) {
+                        // BGEC
+                        if (rs.s >= rt.s) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+                case IOp::e_pop27: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BGTZC
+                        if (rt.s > 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt == instr.itype.rs) {
+                        // BLTZC
+                        if (rt.s < 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt != instr.itype.rs) {
+                        // BLTC
+                        if (rs.s < rt.s) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+
+                case IOp::e_pop66: {
+
+                    if (instr.itype.rs == 0) {
+                        // JIC
+                        reg_file.set_pc(reg_file.get(instr.itype.rt).u +
+                                        sign_ext_imm(instr.itype.imm));
+                    }
+                    else if (instr.longimm_itype.rs != 0) {
+                        // BEQZC
+                        if (reg_file.get(instr.longimm_itype.rs).u == 0) {
+
+                            reg_file.set_pc(
+                                reg_file.get_pc() +
+                                sign_ext_long_imm(instr.longimm_itype.imm) * 4);
+                        }
+                    }
+
+                    break;
+                }
+                case IOp::e_pop76: {
+
+                    if (instr.itype.rs == 0) {
+                        // JIALC
+                        reg_file.set_unsigned(31, reg_file.get_pc());
+                        reg_file.set_pc(reg_file.get(instr.itype.rt).u +
+                                        sign_ext_imm(instr.itype.imm));
+                    }
+                    else if (instr.longimm_itype.rs != 0) {
+                        // BNEZC
+                        if (reg_file.get(instr.longimm_itype.rs).u != 0) {
+
+                            reg_file.set_pc(
+                                reg_file.get_pc() +
+                                sign_ext_long_imm(instr.longimm_itype.imm) * 4);
+                        }
+                    }
+
                     break;
                 }
 
@@ -668,6 +851,7 @@ namespace mips_emulator {
             switch (instr_type.get_value()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
                 case Type::e_itype:
+                case Type::e_longimm_itype:
                     return handle_itype_instr(instr, reg_file, memory);
                 case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
                 case Type::e_fpu_rtype: {

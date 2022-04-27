@@ -843,3 +843,53 @@ TEST_CASE("clo", "[Executor]") {
         }
     }
 }
+
+TEST_CASE("TRAP INSTRUCTIONS") {
+    const auto test = [](uint32_t rs, uint32_t rt, bool trap, Func func) {
+        RegisterFile reg_file;
+
+        reg_file.set_unsigned(RegisterName::e_t0, rs);
+        reg_file.set_unsigned(RegisterName::e_t1, rt);
+
+        const Instruction instr(func, RegisterName::e_0, RegisterName::e_t0,
+                                RegisterName::e_t1, 0);
+        bool result = Executor::handle_rtype_instr(instr, reg_file);
+
+        REQUIRE(result != trap);
+        if (trap) REQUIRE(reg_file.get_bad_instr() == instr.raw);
+    };
+
+    SECTION("TEQ") {
+        test(0, 0, true, Func::e_teq);
+        test(0, 5, false, Func::e_teq);
+    }
+
+    SECTION("TGE") {
+        test(0, 0, true, Func::e_tge);
+        test(0, (uint32_t)-5, true, Func::e_tge);
+        test(0, 5, false, Func::e_tge);
+    }
+
+    SECTION("TGEU") {
+        test(0, 0, true, Func::e_tgeu);
+        test(0, (uint32_t)-5, false, Func::e_tgeu);
+        test(0, 5, false, Func::e_tgeu);
+    }
+
+    SECTION("TLT") {
+        test(0, 0, false, Func::e_tlt);
+        test(0, (uint32_t)-5, false, Func::e_tlt);
+        test(0, 5, true, Func::e_tlt);
+    }
+
+    SECTION("TLTU") {
+        test(0, 0, false, Func::e_tltu);
+        test(0, (uint32_t)-5, true, Func::e_tltu);
+        test(0, 5, true, Func::e_tltu);
+    }
+
+    SECTION("TNE") {
+        test(0, 0, false, Func::e_tne);
+        test(0, 5, true, Func::e_tne);
+    }
+}

@@ -187,11 +187,16 @@ namespace mips_emulator {
         };
 
         // Opcode enum for special3 bshfl instructions
-        // Special3 instructions have a bunch of different layouts depending on
-        // the func field
+        // Note: Align is special case with the func field being replaced with a
+        // 3 bits op and 2 bit bp instead Special3 instructions have a bunch of
+        // different layouts depending on the func field
         enum class Special3BSHFLFunc : uint8_t {
             e_bitswap = 0,
             e_wsbh = 0b00010,
+            e_align_0 = 0b01000,
+            e_align_1 = 0b01001,
+            e_align_2 = 0b01010,
+            e_align_3 = 0b01011,
             e_seh = 0b11000,
             e_seb = 0b10000,
         };
@@ -285,7 +290,7 @@ namespace mips_emulator {
             uint32_t func : 5;
             uint32_t rd : 5;
             uint32_t rt : 5;
-            uint32_t zero : 5;
+            uint32_t rs : 5;
             uint32_t special3 : 6;
         });
 
@@ -462,6 +467,17 @@ namespace mips_emulator {
             special3_type.rd = static_cast<uint8_t>(rd);
             special3_type.rt = static_cast<uint8_t>(rt);
             special3_type.rs = 0;
+            special3_type.special3 = SPECIAL3_OPCODE;
+        }
+
+        Instruction(const Special3Func func, const Special3BSHFLFunc op,
+                    const RegisterName rd, const RegisterName rs,
+                    const RegisterName rt) {
+            special3_type.func = static_cast<uint8_t>(func);
+            special3_type.extra = static_cast<uint8_t>(op);
+            special3_type.rd = static_cast<uint8_t>(rd);
+            special3_type.rt = static_cast<uint8_t>(rt);
+            special3_type.rs = static_cast<uint8_t>(rs);
             special3_type.special3 = SPECIAL3_OPCODE;
         }
 

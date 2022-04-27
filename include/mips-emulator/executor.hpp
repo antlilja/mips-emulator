@@ -31,6 +31,14 @@ namespace mips_emulator {
                                     instr.rtype.shamt == 2 ? shamt2 : shamt3);
             };
 
+            // Conditional Trap Helper function
+            auto trap_on_cond = [&](bool condition) {
+                using Cause = RegisterFile::Exception;
+                if (condition)
+                    reg_file.signal_exception(Cause::e_tr, instr.raw);
+                return !condition;
+            };
+
             switch (func) {
                 case Func::e_add: {
                     reg_file.set_signed(instr.rtype.rd, rs.s + rt.s);
@@ -205,6 +213,15 @@ namespace mips_emulator {
                     reg_file.set_unsigned(instr.rtype.rd, count);
                     break;
                 }
+
+                // Trap instructions
+                case Func::e_teq: return trap_on_cond(rs.u == rt.u);
+                case Func::e_tge: return trap_on_cond(rs.s >= rt.s);
+                case Func::e_tgeu: return trap_on_cond(rs.u >= rt.u);
+                case Func::e_tlt: return trap_on_cond(rs.s < rt.s);
+                case Func::e_tltu: return trap_on_cond(rs.u < rt.u);
+                case Func::e_tne: return trap_on_cond(rs.u != rt.u);
+
                 default: return false;
             }
 

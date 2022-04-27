@@ -67,6 +67,12 @@ namespace mips_emulator {
             e_srlv = 6,
             e_clz = 16,
             e_clo = 11,
+            e_teq = 0b110100,
+            e_tge = 0b110000,
+            e_tgeu = 0b110001,
+            e_tlt = 0b110010,
+            e_tltu = 0b110011,
+            e_tne = 0b110110,
         };
 
         // Enum for FPUR-type instructions

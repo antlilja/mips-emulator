@@ -10,22 +10,51 @@ using namespace mips_emulator;
 
 using IOp = Instruction::ITypeOpcode;
 
-TEST_CASE("addi", "[Executor]") {
-    SECTION("Positive numbers") {
-        using Address = typename RegisterFile::Unsigned;
-        RegisterFile reg_file;
+typedef struct {
+    uint8_t rs, rt;
+    uint32_t rs_val, rt_val;
+    bool will_branch, will_link;
+} BranchTest;
 
-        reg_file.set_unsigned(RegisterName::e_t0, 100202);
+// Test imm branch without delay slot
+void test_branch_compact(const BranchTest tcase, IOp op) {
+    RegisterFile reg_file;
+    const uint32_t start_pc = 0x1000;
+    reg_file.set_unsigned(31, 0); // $ra
+    reg_file.set_unsigned(tcase.rs, tcase.rs_val);
+    reg_file.set_unsigned(tcase.rt, tcase.rt_val);
+    reg_file.set_pc(start_pc);
 
-        Instruction instr(IOp::e_addi, RegisterName::e_t1, RegisterName::e_t0,
-                          22020);
+    reg_file.inc_pc();
+    Instruction instr(op, static_cast<RegisterName>(tcase.rt),
+                      static_cast<RegisterName>(tcase.rs), 0xFFB0);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+    const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+    REQUIRE(no_error);
 
-        REQUIRE(reg_file.get(RegisterName::e_t1).u == 122222);
-    }
-}
+    REQUIRE(reg_file.get_pc() == start_pc - 0x50 * tcase.will_branch * 4 + 4);
+    REQUIRE(reg_file.get(31).u == (start_pc + 4) * tcase.will_link);
+};
+
+// Test with delay slot
+void test_branch(const BranchTest tcase, IOp op) {
+    RegisterFile reg_file;
+    reg_file.set_unsigned(31, 0); // $ra
+    reg_file.set_unsigned(tcase.rs, tcase.rs_val);
+    reg_file.set_unsigned(tcase.rt, tcase.rt_val);
+
+    Instruction instr(op, static_cast<RegisterName>(tcase.rs), 16);
+
+    reg_file.inc_pc(); // Emulate step
+    const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+    REQUIRE(no_error);
+
+    REQUIRE(reg_file.get_pc() == 4);
+    reg_file.update_pc(); // moves past delays slot
+
+    const uint32_t expected_pc = tcase.will_branch ? 4 + 16 * 4 : 8;
+    REQUIRE(reg_file.get_pc() == expected_pc);
+};
 
 TEST_CASE("addiu", "[Executor]") {
     // "Simple" might be a better name, but let's stick with convention
@@ -249,152 +278,40 @@ TEST_CASE("bne", "[Executor]") {
 }
 
 // Branch on Less Than or Equal to Zero
-TEST_CASE("blez", "[Executor]") {
-    SECTION("Equal to 0 (Branch)") {
-        RegisterFile reg_file;
+    auto test = [](const BranchTest tcase) {
+        test_branch(tcase, IOp::e_pop06);
+    };
 
-        reg_file.set_unsigned(RegisterName::e_t0, 0);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
-    }
+    SECTION("Equal to 0 (Branch)") { test({10, 0, 0, 0, true, false}); }
 
     SECTION("Not equal to 0 (Don't branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 1);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
+        test({10, 0, 1, 0, false, false});
     }
 
     SECTION("Largest positive immediate (dont branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 32767);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
+        test({10, 0, 32767, 0, false, false});
     }
 
     SECTION("Smallest negative immediate (branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, -32768);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
+        test({10, 0, (uint32_t)(-32768), 0, true, false});
     }
 }
 
 // Branch on Greater Than Zero
-TEST_CASE("bgtz", "[Executor]") {
-    SECTION("Equal to 0 (Don't branch)") {
-        RegisterFile reg_file;
+    auto test = [](const BranchTest tcase) {
+        test_branch(tcase, IOp::e_pop07);
+    };
 
-        reg_file.set_unsigned(RegisterName::e_t0, 0);
+    SECTION("Equal to 0 (Don't branch)") { test({10, 0, 0, 0, false, false}); }
 
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
-    }
-
-    SECTION("Greater than 0 (Branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 1);
-
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
-    }
+    SECTION("Greater than 0 (Branch)") { test({10, 0, 1, 0, true, false}); }
 
     SECTION("Largest positive immediate (Branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 32767);
-
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
+        test({10, 0, 32767, 0, true, false});
     }
 
     SECTION("Smallest negative immediate (Don't branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, -32768);
-
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
+        test({10, 0, (uint32_t)(-32768), 0, false, false});
     }
 }
 

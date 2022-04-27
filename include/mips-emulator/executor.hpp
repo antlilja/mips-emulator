@@ -221,6 +221,11 @@ namespace mips_emulator {
             const uint32_t ext = (~0U) << 21;
             return ((ext * ((imm >> 20) & 1)) | imm);
         }
+        template <typename T>
+        const uint32_t sign_ext_jtype_imm(const T imm) {
+            const uint32_t ext = (~0U) << 26;
+            return ((ext * ((imm >> 25) & 1)) | imm);
+        }
 
         [[nodiscard]] inline static bool
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
@@ -581,6 +586,18 @@ namespace mips_emulator {
                     reg_file.set_unsigned(RegisterName::e_ra,
                                           reg_file.get_pc());
                     reg_file.delayed_branch(jta);
+                    break;
+                }
+                case JOp::e_bc: {
+                    reg_file.set_pc(reg_file.get_pc() +
+                                    sign_ext_jtype_imm(address) * 4);
+                    break;
+                }
+                case JOp::e_balc: {
+                    reg_file.set_unsigned(RegisterName::e_ra,
+                                          reg_file.get_pc());
+                    reg_file.set_pc(reg_file.get_pc() +
+                                    sign_ext_jtype_imm(address) * 4);
                     break;
                 }
 

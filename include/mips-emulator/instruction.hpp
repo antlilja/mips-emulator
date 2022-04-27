@@ -138,6 +138,8 @@ namespace mips_emulator {
         enum class JTypeOpcode : uint8_t {
             e_j = 2,
             e_jal = 3,
+            e_bc = 0b110010,
+            e_balc = 0b111010,
         };
 
         // Opcode for coprocessor instruction
@@ -323,7 +325,7 @@ namespace mips_emulator {
             uint32_t rs : 5;
             uint32_t pcrel : 6;
         });
-        
+
         PACKED(struct LongimmIType {
             uint32_t imm : 21;
             uint32_t rs : 5;
@@ -503,6 +505,8 @@ namespace mips_emulator {
                     // J-Type
                 case 2:
                 case 3:
+                case 0b110010:
+                case 0b111010:
                     return Type::e_jtype;
 
                     // I-Type

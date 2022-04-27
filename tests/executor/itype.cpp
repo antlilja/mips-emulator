@@ -278,6 +278,7 @@ TEST_CASE("bne", "[Executor]") {
 }
 
 // Branch on Less Than or Equal to Zero
+TEST_CASE("pop06 - BLEZ", "[Executor]") {
     auto test = [](const BranchTest tcase) {
         test_branch(tcase, IOp::e_pop06);
     };
@@ -298,6 +299,7 @@ TEST_CASE("bne", "[Executor]") {
 }
 
 // Branch on Greater Than Zero
+TEST_CASE("pop07 - BGTZ", "[Executor]") {
     auto test = [](const BranchTest tcase) {
         test_branch(tcase, IOp::e_pop07);
     };

@@ -2,7 +2,6 @@
 #include "mips-emulator/instruction.hpp"
 #include "mips-emulator/register_file.hpp"
 #include "mips-emulator/register_name.hpp"
-#include "mips-emulator/static_memory.hpp"
 
 #include <catch2/catch.hpp>
 

@@ -22,6 +22,7 @@ add_executable(mips_emulator_tests
 	executor/jtype.cpp
 	executor/special3.cpp
 	executor/regimm.cpp
+	executor/pcrel.cpp
 )
 
 target_link_libraries(mips_emulator_tests

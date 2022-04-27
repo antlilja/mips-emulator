@@ -68,7 +68,7 @@ TEST_CASE("delay slot", "[Executor]") {
 
         Instruction instr_jump(JOp::e_j, 0x5);
 
-        Instruction instr_delay(IOp::e_addi, RegisterName::e_t0,
+        Instruction instr_delay(IOp::e_addiu, RegisterName::e_t0,
                                 RegisterName::e_0, 777);
 
         memory.template store<uint32_t>(0, instr_jump.raw);

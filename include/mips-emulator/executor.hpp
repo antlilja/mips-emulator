@@ -216,6 +216,16 @@ namespace mips_emulator {
             const uint32_t ext = (~0U) << 16;
             return ((ext * ((imm >> 15) & 1)) | imm);
         }
+        template <typename T>
+        const uint32_t sign_ext_long_imm(const T imm) {
+            const uint32_t ext = (~0U) << 21;
+            return ((ext * ((imm >> 20) & 1)) | imm);
+        }
+        template <typename T>
+        const uint32_t sign_ext_jtype_imm(const T imm) {
+            const uint32_t ext = (~0U) << 26;
+            return ((ext * ((imm >> 25) & 1)) | imm);
+        }
 
         [[nodiscard]] inline static bool
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
@@ -227,47 +237,24 @@ namespace mips_emulator {
 
             const IOp op = static_cast<IOp>(instr.itype.op);
 
+            // set PC after successful branch
+            const uint32_t branch_target =
+                reg_file.get_pc() + (sign_ext_imm(instr.itype.imm) * 4);
+
             switch (op) {
                 case IOp::e_beq: {
                     if (rt.u == rs.u) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                        reg_file.delayed_branch(branch_target);
                     }
                     break;
                 }
                 case IOp::e_bne: {
                     if (rt.u != rs.u) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
+                        reg_file.delayed_branch(branch_target);
                     }
                     break;
                 }
 
-                case IOp::e_blez: {
-                    if (rs.s <= 0) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
-                    }
-                    break;
-                }
-
-                case IOp::e_bgtz: {
-                    if (rs.s > 0) {
-                        reg_file.delayed_branch(
-                            reg_file.get_pc() +
-                            (sign_ext_imm(instr.itype.imm) * 4));
-                    }
-                    break;
-                }
-
-                case IOp::e_addi: {
-                    reg_file.set_signed(instr.itype.rt,
-                                        rs.s + sign_ext_imm(instr.itype.imm));
-                    break;
-                }
                 case IOp::e_addiu: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u + sign_ext_imm(instr.itype.imm));
@@ -304,6 +291,207 @@ namespace mips_emulator {
                 case IOp::e_xori: {
                     reg_file.set_unsigned(instr.itype.rt,
                                           rs.u ^ instr.itype.imm);
+                    break;
+                }
+
+                //  HERE LIES MADNESS... i hate POP
+                case IOp::e_pop06: {
+                    if (instr.itype.rt == 0) {
+                        // BLEZ
+                        if (rs.s <= 0) {
+                            reg_file.delayed_branch(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BLEZALC
+                        if (rt.s <= 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == instr.itype.rt &&
+                             instr.itype.rt != 0) {
+                        // BGEZALC
+                        if (rt.s >= 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != instr.itype.rt &&
+                             instr.itype.rs != 0 && instr.itype.rt != 0) {
+                        // BGEUC
+                        if (rs.u >= rt.u) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+                case IOp::e_pop07: {
+                    if (instr.itype.rt == 0) {
+                        // BGTZ
+                        if (rs.s > 0) {
+                            reg_file.delayed_branch(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BGTZALC
+                        if (rt.s > 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs == instr.itype.rt &&
+                             instr.itype.rt != 0) {
+                        // BLTZALC
+                        if (rt.s < 0) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != instr.itype.rt &&
+                             instr.itype.rs != 0 && instr.itype.rt != 0) {
+                        // BLTUC
+                        if (rs.u < rt.u) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+
+                case IOp::e_pop10: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
+                        instr.itype.rs < instr.itype.rt) { // rs < rt???????
+                        // BEQZALC
+                        if (!rt.u) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rs <
+                                 instr.itype.rt) { // rs < rt???????
+                        // BEQC
+                        if (rt.u == rs.u) reg_file.set_pc(branch_target);
+                    }
+                    else if (instr.itype.rs >= instr.itype.rt) {
+                        // BOVC
+
+                        const bool carry = rs.u + rt.u < rs.u;
+                        const bool is_signed = ((rs.u + rt.u) & 0x80000000) > 0;
+                        const bool sum_overflow = carry != is_signed;
+                        if (sum_overflow) reg_file.set_pc(branch_target);
+                    }
+                    break;
+                }
+                case IOp::e_pop30: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0 &&
+                        instr.itype.rs < instr.itype.rt) {
+
+                        // BNEZALC
+                        if (rt.u) {
+                            reg_file.set_unsigned(31, reg_file.get_pc());
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rs < instr.itype.rt) {
+                        // BNEC
+                        if (rt.u != rs.u) reg_file.set_pc(branch_target);
+                    }
+                    else if (instr.itype.rs >= instr.itype.rt) {
+                        // BNVC
+                        const bool carry = rs.u + rt.u < rs.u;
+                        const bool is_signed = ((rs.u + rt.u) & 0x80000000) > 0;
+                        const bool sum_overflow = carry != is_signed;
+                        if (!sum_overflow) reg_file.set_pc(branch_target);
+                    }
+                    break;
+                }
+
+                case IOp::e_pop26: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BLEZC
+                        if (rt.s <= 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt == instr.itype.rs) {
+                        // BGEZC
+                        if (rt.s >= 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt != instr.itype.rs) {
+                        // BGEC
+                        if (rs.s >= rt.s) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+                case IOp::e_pop27: {
+                    if (instr.itype.rs == 0 && instr.itype.rt != 0) {
+                        // BGTZC
+                        if (rt.s > 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt == instr.itype.rs) {
+                        // BLTZC
+                        if (rt.s < 0) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    else if (instr.itype.rs != 0 && instr.itype.rt != 0 &&
+                             instr.itype.rt != instr.itype.rs) {
+                        // BLTC
+                        if (rs.s < rt.s) {
+                            reg_file.set_pc(branch_target);
+                        }
+                    }
+                    break;
+                }
+
+                case IOp::e_pop66: {
+
+                    if (instr.itype.rs == 0) {
+                        // JIC
+                        reg_file.set_pc(reg_file.get(instr.itype.rt).u +
+                                        sign_ext_imm(instr.itype.imm));
+                    }
+                    else if (instr.longimm_itype.rs != 0) {
+                        // BEQZC
+                        if (reg_file.get(instr.longimm_itype.rs).u == 0) {
+
+                            reg_file.set_pc(
+                                reg_file.get_pc() +
+                                sign_ext_long_imm(instr.longimm_itype.imm) * 4);
+                        }
+                    }
+
+                    break;
+                }
+                case IOp::e_pop76: {
+
+                    if (instr.itype.rs == 0) {
+                        // JIALC
+                        reg_file.set_unsigned(31, reg_file.get_pc());
+                        reg_file.set_pc(reg_file.get(instr.itype.rt).u +
+                                        sign_ext_imm(instr.itype.imm));
+                    }
+                    else if (instr.longimm_itype.rs != 0) {
+                        // BNEZC
+                        if (reg_file.get(instr.longimm_itype.rs).u != 0) {
+
+                            reg_file.set_pc(
+                                reg_file.get_pc() +
+                                sign_ext_long_imm(instr.longimm_itype.imm) * 4);
+                        }
+                    }
+
                     break;
                 }
 
@@ -400,6 +588,18 @@ namespace mips_emulator {
                     reg_file.delayed_branch(jta);
                     break;
                 }
+                case JOp::e_bc: {
+                    reg_file.set_pc(reg_file.get_pc() +
+                                    sign_ext_jtype_imm(address) * 4);
+                    break;
+                }
+                case JOp::e_balc: {
+                    reg_file.set_unsigned(RegisterName::e_ra,
+                                          reg_file.get_pc());
+                    reg_file.set_pc(reg_file.get_pc() +
+                                    sign_ext_jtype_imm(address) * 4);
+                    break;
+                }
 
                 default: return false;
             }
@@ -409,111 +609,111 @@ namespace mips_emulator {
 
         template <typename RegisterFile>
         [[nodiscard]] inline static bool
-        handle_special3_rtype_instr(const Instruction instr,
-                                    RegisterFile& reg_file) {
+        handle_special3_type_bshfl_instr(const Instruction instr,
+                                         RegisterFile& reg_file) {
             using Register = typename RegisterFile::Register;
-            using RFunc = Instruction::Special3Func;
+            using Func = Instruction::Special3BSHFLFunc;
 
-            const Register rt = reg_file.get(instr.special3_rtype.rt);
+            const Register rt = reg_file.get(instr.special3_type_bshfl.rt);
 
-            // Switch on Func since instruction layouts are different
-            switch (static_cast<RFunc>(instr.special3_rtype.func)) {
-                case RFunc::e_bshfl: {
-                    // BSHFL, zero(rs), rt, rd, rop(extra), func
-                    using ROp = Instruction::Special3BSHFLTypeOp;
-                    const ROp op = static_cast<ROp>(instr.special3_rtype.extra);
-                    switch (op) {
-                        case ROp::e_bitswap: {
-                            // Swaps (reverses) bits in a byte
-                            // Example: 0b11001000 -> 0b00010011
-                            const auto reverse_byte_bits = [&](uint8_t val) {
-                                val = ((val >> 1) & 0x55) | ((val & 0x55) << 1);
-                                val = ((val >> 2) & 0x33) | ((val & 0x33) << 2);
-                                val = ((val >> 4) & 0x0f) | ((val & 0x0f) << 4);
-                                return val;
-                            };
+            const auto func = static_cast<Func>(instr.special3_type_bshfl.func);
 
-                            // Swaps (reverses) the bits for each byte
-                            uint32_t result = 0;
-                            for (int i = 0; i < sizeof(uint32_t); i++)
-                                result |= reverse_byte_bits((rt.u >> i * 8))
-                                          << (i * 8);
+            switch (func) {
+                case Func::e_bitswap: {
+                    // Swaps (reverses) bits in a byte
+                    // Example: 0b11001000 -> 0b00010011
+                    const auto reverse_byte_bits = [&](uint8_t val) {
+                        val = ((val >> 1) & 0x55) | ((val & 0x55) << 1);
+                        val = ((val >> 2) & 0x33) | ((val & 0x33) << 2);
+                        val = ((val >> 4) & 0x0f) | ((val & 0x0f) << 4);
+                        return val;
+                    };
 
-                            reg_file.set_unsigned(instr.special3_rtype.rd,
-                                                  result);
+                    // Swaps (reverses) the bits for each byte
+                    uint32_t result = 0;
+                    for (int i = 0; i < sizeof(uint32_t); i++)
+                        result |= reverse_byte_bits((rt.u >> i * 8)) << (i * 8);
 
-                            break;
-                        }
-                        case ROp::e_wsbh: {
-                            // Word Swap Bytes Within Halfwords
-                            reg_file.set_unsigned(
-                                instr.special3_rtype.rd,
-                                ((rt.u & 0xFF) << 8) | ((rt.u & 0xFF00) >> 8) |
-                                    ((rt.u & 0xFF0000) << 8) |
-                                    ((rt.u & 0xFF000000) >> 8));
-                            break;
-                        }
-                        case ROp::e_seb: {
-                            // Sign-extend Byte
-                            reg_file.set_unsigned(
-                                instr.special3_rtype.rd,
-                                (((~0U) << 8) * ((rt.u >> 7) & 1)) |
-                                    (rt.u & 0xFF));
-                            break;
-                        }
-                        case ROp::e_seh: {
-                            // Sign-extend Halfword
-                            reg_file.set_unsigned(
-                                instr.special3_rtype.rd,
-                                (((~0U) << 16) * ((rt.u >> 15) & 1)) |
-                                    (rt.u & 0xFFFF));
-                            break;
-                        }
-                        default: return false;
-                    }
+                    reg_file.set_unsigned(instr.special3_type_bshfl.rd, result);
 
                     break;
                 }
-                case RFunc::e_ins: {
-                    // INS, rs, rt, msb(rd), lsb(extra), func
-                    const uint32_t msb = instr.special3_rtype.rd;
-                    const uint32_t lsb = instr.special3_rtype.extra;
-                    const uint32_t size = msb - lsb + 1;
-
-                    // Error cases
-                    if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
-                        return false;
-
-                    // Mask out the lowest 'size' bits from rs register
-                    uint32_t mask = (size == 32) ? ~0 : (1 << size) - 1;
-                    uint32_t bitfield =
-                        reg_file.get(instr.special3_rtype.rs).u & mask;
-
-                    // Shift mask to output position and insert bitfield
-                    mask = ~(mask << lsb);
-                    const uint32_t val = (rt.u & mask) | (bitfield << lsb);
-                    reg_file.set_unsigned(instr.special3_rtype.rt, val);
+                case Func::e_wsbh: {
+                    // Word Swap Bytes Within Halfwords
+                    reg_file.set_unsigned(instr.special3_type_bshfl.rd,
+                                          ((rt.u & 0xFF) << 8) |
+                                              ((rt.u & 0xFF00) >> 8) |
+                                              ((rt.u & 0xFF0000) << 8) |
+                                              ((rt.u & 0xFF000000) >> 8));
                     break;
                 }
-                case RFunc::e_ext: {
-                    // EXT, rt, rs, msbd(rd), lsb(extra), func
-                    const uint32_t size = instr.special3_rtype.rd + 1;
-                    const uint32_t lsb = instr.special3_rtype.extra;
-
-                    // Error cases
-                    if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
-                        return false;
-
-                    uint32_t mask =
-                        (size == 32) ? ~0 : ((1 << size) - 1) << lsb;
-                    const uint32_t bitfield =
-                        (reg_file.get(instr.special3_rtype.rs).u & mask);
-                    reg_file.set_unsigned(instr.special3_rtype.rt,
-                                          bitfield >> lsb);
+                case Func::e_seb: {
+                    // Sign-extend Byte
+                    reg_file.set_unsigned(instr.special3_type_bshfl.rd,
+                                          (((~0U) << 8) * ((rt.u >> 7) & 1)) |
+                                              (rt.u & 0xFF));
+                    break;
+                }
+                case Func::e_seh: {
+                    // Sign-extend Halfword
+                    reg_file.set_unsigned(instr.special3_type_bshfl.rd,
+                                          (((~0U) << 16) * ((rt.u >> 15) & 1)) |
+                                              (rt.u & 0xFFFF));
                     break;
                 }
                 default: return false;
             }
+
+            return true;
+        }
+
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_special3_type_ext_instr(const Instruction instr,
+                                       RegisterFile& reg_file) {
+            using Register = typename RegisterFile::Register;
+
+            const Register rt = reg_file.get(instr.special3_type.rt);
+
+            const uint32_t size = instr.special3_type_ext.msbd + 1;
+            const uint32_t lsb = instr.special3_type_ext.lsb;
+
+            // Error cases
+            if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
+                return false;
+
+            const uint32_t mask = (size == 32) ? ~0 : ((1 << size) - 1) << lsb;
+            const uint32_t bitfield =
+                (reg_file.get(instr.special3_type.rs).u & mask);
+            reg_file.set_unsigned(instr.special3_type.rt, bitfield >> lsb);
+
+            return true;
+        }
+
+        template <typename RegisterFile>
+        [[nodiscard]] inline static bool
+        handle_special3_type_ins_instr(const Instruction instr,
+                                       RegisterFile& reg_file) {
+            using Register = typename RegisterFile::Register;
+
+            const Register rt = reg_file.get(instr.special3_type.rt);
+
+            const uint32_t msb = instr.special3_type_ins.msb;
+            const uint32_t lsb = instr.special3_type_ins.lsb;
+            const uint32_t size = msb - lsb + 1;
+
+            // Error cases
+            if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
+                return false;
+
+            // Mask out the lowest 'size' bits from rs register
+            uint32_t mask = (size == 32) ? ~0 : (1 << size) - 1;
+            uint32_t bitfield = reg_file.get(instr.special3_type.rs).u & mask;
+
+            // Shift mask to output position and insert bitfield
+            mask = ~(mask << lsb);
+            const uint32_t val = (rt.u & mask) | (bitfield << lsb);
+            reg_file.set_unsigned(instr.special3_type.rt, val);
 
             return true;
         }
@@ -668,6 +868,7 @@ namespace mips_emulator {
             switch (instr_type.get_value()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
                 case Type::e_itype:
+                case Type::e_longimm_itype:
                     return handle_itype_instr(instr, reg_file, memory);
                 case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
                 case Type::e_fpu_rtype: {
@@ -682,8 +883,16 @@ namespace mips_emulator {
                     // TODO: Handle FPU Brach instructions
                     return false;
                 }
-                case Type::e_special3_rtype:
-                    return handle_special3_rtype_instr(instr, reg_file);
+
+                    // Special 3
+                case Type::e_special3_type_bshfl:
+                    return handle_special3_type_bshfl_instr(instr, reg_file);
+                case Type::e_special3_type_ext:
+                    return handle_special3_type_ext_instr(instr, reg_file);
+                case Type::e_special3_type_ins:
+                    return handle_special3_type_ins_instr(instr, reg_file);
+
+                    // Regimm
                 case Type::e_regimm_itype:
                     return handle_regimm_itype_instr(instr, reg_file);
 

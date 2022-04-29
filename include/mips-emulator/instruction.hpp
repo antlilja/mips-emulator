@@ -31,10 +31,13 @@ namespace mips_emulator {
             e_fpu_rtype,
             e_fpu_btype,
             e_fpu_ttype,
-            e_special3_rtype,
+            e_special3_type_bshfl,
+            e_special3_type_ext,
+            e_special3_type_ins,
             e_regimm_itype,
             e_pcrel_type1,
             e_pcrel_type2,
+            e_longimm_itype,
         };
 
         enum class Func : uint8_t {
@@ -105,10 +108,7 @@ namespace mips_emulator {
 
         enum class ITypeOpcode : uint8_t {
             e_beq = 4,
-            e_blez = 6,
             e_bne = 5,
-            e_bgtz = 7,
-            e_addi = 8,
             e_addiu = 9,
             e_aui = 15,
             e_slti = 10,
@@ -124,11 +124,22 @@ namespace mips_emulator {
             e_lh = 0b100001,
             e_lhu = 0b100101,
             e_sh = 0b101001,
+            e_pop06 = 0b000110,
+            e_pop07 = 0b000111,
+            e_pop10 = 0b001000,
+            e_pop26 = 0b010110,
+            e_pop27 = 0b010111,
+            e_pop30 = 0b011000,
+            e_pop66 = 0b110110,
+            e_pop76 = 0b111110,
+
         };
 
         enum class JTypeOpcode : uint8_t {
             e_j = 2,
             e_jal = 3,
+            e_bc = 0b110010,
+            e_balc = 0b111010,
         };
 
         // Opcode for coprocessor instruction
@@ -169,20 +180,20 @@ namespace mips_emulator {
             e_bshfl = 0b100000,
         };
 
-        // regimm function types are dependent on value in bits 16 to 20
-        enum class RegimmITypeOp : uint8_t {
-            e_bgez = 1,
-            e_bltz = 0,
-        };
-
         // Opcode enum for special3 bshfl instructions
         // Special3 instructions have a bunch of different layouts depending on
         // the func field
-        enum class Special3BSHFLTypeOp : uint8_t {
+        enum class Special3BSHFLFunc : uint8_t {
             e_bitswap = 0,
             e_wsbh = 0b00010,
             e_seh = 0b11000,
             e_seb = 0b10000,
+        };
+
+        // regimm function types are dependent on value in bits 16 to 20
+        enum class RegimmITypeOp : uint8_t {
+            e_bgez = 1,
+            e_bltz = 0,
         };
 
         // PC-relative functions
@@ -254,14 +265,37 @@ namespace mips_emulator {
         });
 
         // Special3 structs
-        // Special3RType, similar to R type instruction
-        // Calling it R-type due to lack of better name
-        // Special3 instructions have a bunch of different layouts depending on
-        // the func field
-        PACKED(struct Special3RType {
+        PACKED(struct Special3Type {
             uint32_t func : 6;
             uint32_t extra : 5;
             uint32_t rd : 5;
+            uint32_t rt : 5;
+            uint32_t rs : 5;
+            uint32_t special3 : 6;
+        });
+
+        PACKED(struct Special3TypeBSHFL {
+            uint32_t bshfl : 6;
+            uint32_t func : 5;
+            uint32_t rd : 5;
+            uint32_t rt : 5;
+            uint32_t zero : 5;
+            uint32_t special3 : 6;
+        });
+
+        PACKED(struct Special3TypeEXT {
+            uint32_t ext : 6;
+            uint32_t lsb : 5;
+            uint32_t msbd : 5;
+            uint32_t rt : 5;
+            uint32_t rs : 5;
+            uint32_t special3 : 6;
+        });
+
+        PACKED(struct Special3TypeINS {
+            uint32_t ins : 6;
+            uint32_t lsb : 5;
+            uint32_t msb : 5;
             uint32_t rt : 5;
             uint32_t rs : 5;
             uint32_t special3 : 6;
@@ -282,12 +316,18 @@ namespace mips_emulator {
             uint32_t imm : 19;
             uint32_t func : 2;
             uint32_t rs : 5;
-            uint32_t op : 6;
+            uint32_t pcrel : 6;
         });
 
         PACKED(struct PCRelType2 {
             uint32_t imm : 16;
             uint32_t func : 5;
+            uint32_t rs : 5;
+            uint32_t pcrel : 6;
+        });
+
+        PACKED(struct LongimmIType {
+            uint32_t imm : 21;
             uint32_t rs : 5;
             uint32_t op : 6;
         });
@@ -308,8 +348,17 @@ namespace mips_emulator {
         static_assert(sizeof(FPUTType) == 4,
                       "Instruction::FPUTType bitfield is not 4 bytes in size");
         static_assert(
-            sizeof(Special3RType) == 4,
-            "Instruction::Special3RType bitfield is not 4 bytes in size");
+            sizeof(Special3Type) == 4,
+            "Instruction::Special3Type bitfield is not 4 bytes in size");
+        static_assert(
+            sizeof(Special3TypeBSHFL) == 4,
+            "Instruction::Special3TypeBSHFL bitfield is not 4 bytes in size");
+        static_assert(
+            sizeof(Special3TypeEXT) == 4,
+            "Instruction::Special3TypeEXT bitfield is not 4 bytes in size");
+        static_assert(
+            sizeof(Special3TypeINS) == 4,
+            "Instruction::Special3TypeINS bitfield is not 4 bytes in size");
         static_assert(
             sizeof(RegimmIType) == 4,
             "Instruction::RegimmIType bitfield is not 4 bytes in size");
@@ -399,25 +448,26 @@ namespace mips_emulator {
         // raw
         Instruction(const uint32_t value) { raw = value; }
 
-        // Special3 R-Type
-        Instruction(const Special3Func func, const Special3BSHFLTypeOp op,
+        // Special3
+        Instruction(const Special3Func func, const Special3BSHFLFunc op,
                     const RegisterName rd, const RegisterName rt) {
-            special3_rtype.func = static_cast<uint8_t>(func);
-            special3_rtype.extra = static_cast<uint8_t>(op);
-            special3_rtype.rd = static_cast<uint8_t>(rd);
-            special3_rtype.rt = static_cast<uint8_t>(rt);
-            special3_rtype.rs = 0;
-            special3_rtype.special3 = SPECIAL3_OPCODE;
+            special3_type.func = static_cast<uint8_t>(func);
+            special3_type.extra = static_cast<uint8_t>(op);
+            special3_type.rd = static_cast<uint8_t>(rd);
+            special3_type.rt = static_cast<uint8_t>(rt);
+            special3_type.rs = 0;
+            special3_type.special3 = SPECIAL3_OPCODE;
         }
+
         Instruction(const Special3Func func, const uint8_t extra,
                     const uint8_t rd, const RegisterName rs,
                     const RegisterName rt) {
-            special3_rtype.func = static_cast<uint8_t>(func);
-            special3_rtype.extra = extra;
-            special3_rtype.rd = rd;
-            special3_rtype.rs = static_cast<uint8_t>(rs);
-            special3_rtype.rt = static_cast<uint8_t>(rt);
-            special3_rtype.special3 = SPECIAL3_OPCODE;
+            special3_type.func = static_cast<uint8_t>(func);
+            special3_type.extra = extra;
+            special3_type.rd = rd;
+            special3_type.rs = static_cast<uint8_t>(rs);
+            special3_type.rt = static_cast<uint8_t>(rt);
+            special3_type.special3 = SPECIAL3_OPCODE;
         }
 
         // Regimm I-Type
@@ -432,7 +482,7 @@ namespace mips_emulator {
         // PC relative
         Instruction(const RegisterName rs, const PCRelFunc1 func,
                     const uint32_t immediate) {
-            pcrel_type1.op = PCREL_OPCODE;
+            pcrel_type1.pcrel = PCREL_OPCODE;
             pcrel_type1.rs = static_cast<uint8_t>(rs);
             pcrel_type1.func = static_cast<uint8_t>(func);
             pcrel_type1.imm = immediate;
@@ -455,6 +505,8 @@ namespace mips_emulator {
                     // J-Type
                 case 2:
                 case 3:
+                case 0b110010:
+                case 0b111010:
                     return Type::e_jtype;
 
                     // I-Type
@@ -478,6 +530,9 @@ namespace mips_emulator {
                 case 40:
                 case 41:
                 case 43:
+                case 24:
+                case 22:
+                case 23:
                     return Type::e_itype;
 
                     // REGIMM
@@ -485,8 +540,17 @@ namespace mips_emulator {
                     return Type::e_regimm_itype;
 
                     // Special3
-                case SPECIAL3_OPCODE:
-                    return Type::e_special3_rtype;
+                case SPECIAL3_OPCODE: {
+                    switch (static_cast<Special3Func>(special3_type.func)) {
+                        case Special3Func::e_bshfl:
+                            return Type::e_special3_type_bshfl;
+                        case Special3Func::e_ext:
+                            return Type::e_special3_type_ext;
+                        case Special3Func::e_ins:
+                            return Type::e_special3_type_ins;
+                    }
+                    break;
+                }
 
                     // PC relative
                 case PCREL_OPCODE: {
@@ -506,6 +570,14 @@ namespace mips_emulator {
 
                     return Type::e_fpu_ttype;
                 }
+                case 62:
+                case 54:
+                    if (itype.rs != 0) {
+                        return Type::e_longimm_itype;
+                    }
+                    else {
+                        return Type::e_itype;
+                    }
             }
 
             return Result<Type, void>();
@@ -522,9 +594,13 @@ namespace mips_emulator {
         FPUTType fpu_ttype;
         FPUBType fpu_btype;
 
-        Special3RType special3_rtype;
+        Special3Type special3_type;
+        Special3TypeBSHFL special3_type_bshfl;
+        Special3TypeEXT special3_type_ext;
+        Special3TypeINS special3_type_ins;
 
         RegimmIType regimm_itype;
+        LongimmIType longimm_itype;
 
         PCRelType1 pcrel_type1;
         PCRelType2 pcrel_type2;

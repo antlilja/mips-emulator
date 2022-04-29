@@ -10,22 +10,51 @@ using namespace mips_emulator;
 
 using IOp = Instruction::ITypeOpcode;
 
-TEST_CASE("addi", "[Executor]") {
-    SECTION("Positive numbers") {
-        using Address = typename RegisterFile::Unsigned;
-        RegisterFile reg_file;
+typedef struct {
+    uint8_t rs, rt;
+    uint32_t rs_val, rt_val;
+    bool will_branch, will_link;
+} BranchTest;
 
-        reg_file.set_unsigned(RegisterName::e_t0, 100202);
+// Test imm branch without delay slot
+void test_branch_compact(const BranchTest tcase, IOp op) {
+    RegisterFile reg_file;
+    const uint32_t start_pc = 0x1000;
+    reg_file.set_unsigned(31, 0); // $ra
+    reg_file.set_unsigned(tcase.rs, tcase.rs_val);
+    reg_file.set_unsigned(tcase.rt, tcase.rt_val);
+    reg_file.set_pc(start_pc);
 
-        Instruction instr(IOp::e_addi, RegisterName::e_t1, RegisterName::e_t0,
-                          22020);
+    reg_file.inc_pc();
+    Instruction instr(op, static_cast<RegisterName>(tcase.rt),
+                      static_cast<RegisterName>(tcase.rs), 0xFFB0);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+    const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+    REQUIRE(no_error);
 
-        REQUIRE(reg_file.get(RegisterName::e_t1).u == 122222);
-    }
-}
+    REQUIRE(reg_file.get_pc() == start_pc - 0x50 * tcase.will_branch * 4 + 4);
+    REQUIRE(reg_file.get(31).u == (start_pc + 4) * tcase.will_link);
+};
+
+// Test with delay slot
+void test_branch(const BranchTest tcase, IOp op) {
+    RegisterFile reg_file;
+    reg_file.set_unsigned(31, 0); // $ra
+    reg_file.set_unsigned(tcase.rs, tcase.rs_val);
+    reg_file.set_unsigned(tcase.rt, tcase.rt_val);
+
+    Instruction instr(op, static_cast<RegisterName>(tcase.rs), 16);
+
+    reg_file.inc_pc(); // Emulate step
+    const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+    REQUIRE(no_error);
+
+    REQUIRE(reg_file.get_pc() == 4);
+    reg_file.update_pc(); // moves past delays slot
+
+    const uint32_t expected_pc = tcase.will_branch ? 4 + 16 * 4 : 8;
+    REQUIRE(reg_file.get_pc() == expected_pc);
+};
 
 TEST_CASE("addiu", "[Executor]") {
     // "Simple" might be a better name, but let's stick with convention
@@ -249,152 +278,42 @@ TEST_CASE("bne", "[Executor]") {
 }
 
 // Branch on Less Than or Equal to Zero
-TEST_CASE("blez", "[Executor]") {
-    SECTION("Equal to 0 (Branch)") {
-        RegisterFile reg_file;
+TEST_CASE("pop06 - BLEZ", "[Executor]") {
+    auto test = [](const BranchTest tcase) {
+        test_branch(tcase, IOp::e_pop06);
+    };
 
-        reg_file.set_unsigned(RegisterName::e_t0, 0);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
-    }
+    SECTION("Equal to 0 (Branch)") { test({10, 0, 0, 0, true, false}); }
 
     SECTION("Not equal to 0 (Don't branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 1);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
+        test({10, 0, 1, 0, false, false});
     }
 
     SECTION("Largest positive immediate (dont branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 32767);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
+        test({10, 0, 32767, 0, false, false});
     }
 
     SECTION("Smallest negative immediate (branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, -32768);
-
-        Instruction instr(IOp::e_blez, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
+        test({10, 0, (uint32_t)(-32768), 0, true, false});
     }
 }
 
 // Branch on Greater Than Zero
-TEST_CASE("bgtz", "[Executor]") {
-    SECTION("Equal to 0 (Don't branch)") {
-        RegisterFile reg_file;
+TEST_CASE("pop07 - BGTZ", "[Executor]") {
+    auto test = [](const BranchTest tcase) {
+        test_branch(tcase, IOp::e_pop07);
+    };
 
-        reg_file.set_unsigned(RegisterName::e_t0, 0);
+    SECTION("Equal to 0 (Don't branch)") { test({10, 0, 0, 0, false, false}); }
 
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
-    }
-
-    SECTION("Greater than 0 (Branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 1);
-
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
-    }
+    SECTION("Greater than 0 (Branch)") { test({10, 0, 1, 0, true, false}); }
 
     SECTION("Largest positive immediate (Branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, 32767);
-
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 68);
+        test({10, 0, 32767, 0, true, false});
     }
 
     SECTION("Smallest negative immediate (Don't branch)") {
-        RegisterFile reg_file;
-
-        reg_file.set_unsigned(RegisterName::e_t0, -32768);
-
-        Instruction instr(IOp::e_bgtz, RegisterName::e_t0, 16);
-
-        reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
-
-        REQUIRE(reg_file.get_pc() == 4);
-
-        reg_file.update_pc(); // moves past delays slot
-
-        REQUIRE(reg_file.get_pc() == 8);
+        test({10, 0, (uint32_t)(-32768), 0, false, false});
     }
 }
 
@@ -550,5 +469,345 @@ TEST_CASE("store instructions", "[Executor]") {
         REQUIRE(!read_mem.is_error());
 
         REQUIRE(read_mem.get_value() == 0x96);
+    }
+}
+
+TEST_CASE("pop10") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop10);
+    };
+
+    SECTION("BEQZALC - No Branch") {
+        test({0, 10, 0, 20, false, false});
+        test({0, 10, 0, 1, false, false});
+        test({0, 10, 0, 0xf0000000, false, false});
+    }
+
+    SECTION("BEQZALC - Branch") {
+        test({0, 10, 0, 0, true, true});
+        test({0, 15, 10, 0, true, true});
+    }
+
+    SECTION("BOVC - Branch") { // Branch not overflow
+        test({10, 10, 0x7FFFFFFF, 0x7FFFFFFF, true, false});
+        test({10, 5, 0x1, INT32_MAX, true, false});
+        test({10, 5, INT32_MAX, 0x1, true, false});
+    }
+
+    SECTION("BOVC - No Branch") {
+        test({10, 10, 0, 0, false, false});
+        test({10, 5, 10, 0, false, false});
+    }
+
+    SECTION("BEQC - No Branch") {
+        test({4, 10, 0, 1, false, false});
+        test({4, 10, 100, 1, false, false});
+        test({4, 10, 0xf0000, 0, false, false});
+        test({4, 10, 0xf0000, 0x00f00000, false, false});
+    }
+
+    SECTION("BEQC - Branch") {
+        test({4, 10, 0, 0, true, false});
+        test({7, 15, 50, 50, true, false});
+        test({7, 15, 0xff000000, 0xff000000, true, false});
+    }
+}
+
+TEST_CASE("pop30") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop30);
+    };
+
+    SECTION("BNVC - No Branch") { // Branch not overflow
+        test({10, 10, 0x40000000, 0x40000000, false, false});
+        test({10, 5, 1, INT32_MAX, false, false});
+        test({10, 4, INT32_MAX, 1, false, false});
+    }
+
+    SECTION("BNVC - Branch") {
+        test({10, 10, 0, 0, true, false});
+        test({10, 5, 10, 0, true, false});
+    }
+
+    SECTION("BNEZALC - Branch") {
+        test({0, 10, 0, 20, true, true});
+        test({0, 10, 0, 1, true, true});
+        test({0, 10, 0, 0xf0000000, true, true});
+    }
+
+    SECTION("BNEZALC - No Branch") {
+        test({0, 10, 0, 0, false, false});
+        test({0, 15, 10, 0, false, false});
+    }
+
+    SECTION("BNEC - Branch") {
+        test({4, 10, 0, 1, true, false});
+        test({4, 10, 100, 1, true, false});
+        test({4, 10, 0xf0000, 0, true, false});
+        test({4, 10, 0xf0000, 0x00f00000, true, false});
+    }
+
+    SECTION("BNEC - No Branch") {
+        test({4, 10, 0, 0, false, false});
+        test({7, 15, 50, 50, false, false});
+        test({7, 15, 0xff000000, 0xff000000, false, false});
+    }
+}
+
+TEST_CASE("pop06 - compact") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop06);
+    };
+
+    SECTION("BLEZALC - Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, (uint32_t)(0), true, true});
+        test({0, 10, 0, (uint32_t)(-0x100), true, true});
+        test({0, 10, 0, (uint32_t)(INT32_MIN), true, true});
+    }
+
+    SECTION("BLEZALC - No Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, 1, false, false});
+        test({0, 15, 10, INT32_MAX, false, false});
+    }
+
+    SECTION("BGEZALC - Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(0), (uint32_t)(0), true, true});
+        test({10, 10, 1, 1, true, true});
+        test({10, 10, INT32_MAX, INT32_MAX, true, true});
+    }
+
+    SECTION("BGEZALC - No Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(-0x100), (uint32_t)(-0x100), false, false});
+        test({10, 10, (uint32_t)(INT32_MIN), (uint32_t)(INT32_MIN), false,
+              false});
+    }
+
+    SECTION("BGEUC - Branch") { // rs != rt != 0
+        test({5, 10, 0xf0000000, 0, true, false});
+        test({5, 10, 0x1000, 0, true, false});
+        test({5, 10, 0, 0, true, false});
+    }
+
+    SECTION("BGEUC - No Branch") { // rs != rt != 0
+        test({5, 10, 0, 0xf0000000, false, false});
+        test({5, 10, 0, 0x1000, false, false});
+    }
+}
+
+TEST_CASE("pop07 - compact") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop07);
+    };
+
+    SECTION("BGTZALC - No Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, (uint32_t)(0), false, false});
+        test({0, 10, 0, (uint32_t)(-0x100), false, false});
+        test({0, 10, 0, (uint32_t)(INT32_MIN), false, false});
+    }
+
+    SECTION("BGTZALC - Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, 1, true, true});
+        test({0, 15, 10, INT32_MAX, true, true});
+    }
+
+    SECTION("BLTZALC - No Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(0), (uint32_t)(0), false, false});
+        test({10, 10, 1, 1, false, false});
+        test({10, 10, INT32_MAX, INT32_MAX, false, false});
+    }
+
+    SECTION("BLTZALC - Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(-0x100), (uint32_t)(-0x100), true, true});
+        test(
+            {10, 10, (uint32_t)(INT32_MIN), (uint32_t)(INT32_MIN), true, true});
+    }
+
+    SECTION("BLTUC - No Branch") { // rs != rt != 0
+        test({5, 10, 0xf0000000, 0, false, false});
+        test({5, 10, 0x1000, 0, false, false});
+        test({5, 10, 0, 0, false, false});
+    }
+
+    SECTION("BLTUC - Branch") { // rs != rt != 0
+        test({5, 10, 0, 0xf0000000, true, false});
+        test({5, 10, 0, 0x1000, true, false});
+    }
+}
+
+TEST_CASE("pop26 - compact") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop26);
+    };
+
+    SECTION("BLEZC - Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, (uint32_t)(0), true, false});
+        test({0, 10, 0, (uint32_t)(-0x100), true, false});
+        test({0, 10, 0, (uint32_t)(INT32_MIN), true, false});
+    }
+
+    SECTION("BLEZC - No Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, 1, false, false});
+        test({0, 15, 10, INT32_MAX, false, false});
+    }
+
+    SECTION("BGEZC - Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(0), (uint32_t)(0), true, false});
+        test({10, 10, 1, 1, true, false});
+        test({10, 10, INT32_MAX, INT32_MAX, true, false});
+    }
+
+    SECTION("BGEZC - No Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(-0x100), (uint32_t)(-0x100), false, false});
+        test({10, 10, (uint32_t)(INT32_MIN), (uint32_t)(INT32_MIN), false,
+              false});
+    }
+
+    SECTION("BGEC - Branch") { // rs != rt != 0
+        test({5, 10, 0, 0, true, false});
+        test({5, 10, 0, (uint32_t)(-0x100), true, false});
+        test({5, 10, 1000, (uint32_t)(-0x100), true, false});
+    }
+
+    SECTION("BGEC - No Branch") { // rs != rt != 0
+        test({5, 10, 0, 1000, false, false});
+        test({5, 10, (uint32_t)(-0x100), 0x1000, false, false});
+    }
+}
+
+TEST_CASE("pop27 - compact") {
+    auto test = [](const BranchTest tcase) {
+        test_branch_compact(tcase, IOp::e_pop27);
+    };
+
+    SECTION("BGTZC - No Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, (uint32_t)(0), false, false});
+        test({0, 10, 0, (uint32_t)(-0x100), false, false});
+        test({0, 10, 0, (uint32_t)(INT32_MIN), false, false});
+    }
+
+    SECTION("BGTZC - Branch") { // rs == 0 rt != 0
+        test({0, 10, 0, 1, true, false});
+        test({0, 15, 10, INT32_MAX, true, false});
+    }
+
+    SECTION("BLTZC - No Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(0), (uint32_t)(0), false, false});
+        test({10, 10, 1, 1, false, false});
+        test({10, 10, INT32_MAX, INT32_MAX, false, false});
+    }
+
+    SECTION("BLTZC - Branch") { // rs = rt != 0
+        test({10, 10, (uint32_t)(-0x100), (uint32_t)(-0x100), true, false});
+        test({10, 10, (uint32_t)(INT32_MIN), (uint32_t)(INT32_MIN), true,
+              false});
+    }
+
+    SECTION("BLTC - No Branch") { // rs != rt != 0
+        test({5, 10, 0, 0, false, false});
+        test({5, 10, 0, (uint32_t)(-0x100), false, false});
+        test({5, 10, 1000, (uint32_t)(-0x100), false, false});
+    }
+
+    SECTION("BLTC - Branch") { // rs != rt != 0
+        test({5, 10, 0, 1000, true, false});
+        test({5, 10, (uint32_t)(-0x100), 0x1000, true, false});
+    }
+}
+
+TEST_CASE("pop66 - compact") {
+    RegisterFile reg_file;
+    reg_file.set_pc(0x100);
+
+    SECTION("BEQZE  - no branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 1);
+
+        Instruction instr(IOp::e_pop66,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0x8);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100);
+    }
+
+    SECTION("BEQZE - branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 0);
+
+        Instruction instr(IOp::e_pop66,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0b11);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100 - 0b1100);
+    }
+
+    SECTION("JIC") { // rs == 0 JIC
+
+        reg_file.set_signed(RegisterName::e_t0, 0xbeef);
+
+        Instruction instr(IOp::e_pop66, RegisterName::e_t0, RegisterName::e_0,
+                          -0xf);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0xbee0);
+    }
+}
+
+TEST_CASE("pop76 - compact") {
+    RegisterFile reg_file;
+    reg_file.set_pc(0x100);
+
+    SECTION("BEQZE - no branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 0);
+
+        Instruction instr(IOp::e_pop76,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0x8);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100);
+    }
+
+    SECTION("BEQZE - branch") {
+
+        reg_file.set_signed(RegisterName::e_t0, 1);
+
+        Instruction instr(IOp::e_pop76,
+                          static_cast<RegisterName>(
+                              0b11111), // all ones for upper 5 bits of long imm
+                          RegisterName::e_t0, -0b11);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0x100 - 0b1100);
+    }
+
+    SECTION("JIALC") { // rs == 0 JIALC
+
+        reg_file.set_signed(RegisterName::e_t0, 0xbeef);
+
+        Instruction instr(IOp::e_pop76, RegisterName::e_t0, RegisterName::e_0,
+                          -0xf);
+
+        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(no_error);
+
+        REQUIRE(reg_file.get_pc() == 0xbee0);
+
+        REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x100);
     }
 }

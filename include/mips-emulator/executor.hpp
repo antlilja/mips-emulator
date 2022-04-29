@@ -761,11 +761,11 @@ namespace mips_emulator {
             using Func = Instruction::PCRelFunc1;
 
             // Both instructions require the same address calculation
-            auto address = (static_cast<uint32_t>(instr.pcrel_type1.imm) << 2) +
-                           reg_file.get_pc();
-
+            auto address = (static_cast<uint32_t>(instr.pcrel_type1.imm) << 2);
             // Sign extend
             address |= 1023 * ((address >> 21) & 1);
+            // Add PC-value
+            address += reg_file.get_pc();
 
             const Func func = static_cast<Func>(instr.pcrel_type1.func);
             switch (func) {
@@ -812,10 +812,10 @@ namespace mips_emulator {
 
             // Both instructions require the same start of address calculation
             const auto address =
-                (static_cast<uint32_t>(instr.pcrel_type1.imm) << 16) +
+                (static_cast<uint32_t>(instr.pcrel_type2.imm) << 16) +
                 reg_file.get_pc();
 
-            const Func func = static_cast<Func>(instr.pcrel_type1.func);
+            const Func func = static_cast<Func>(instr.pcrel_type2.func);
             switch (func) {
                     /*
                       This instruction performs a PC-relative address

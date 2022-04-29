@@ -306,3 +306,51 @@ TEST_CASE("Regimm I Type", "[Instruction]") {
         REQUIRE(t.raw == 0x5200008);
     }
 }
+
+TEST_CASE("PCrel Type 1", "[Instruction]") {
+    using Type = Instruction::Type;
+    using Func = Instruction::PCRelFunc1;
+
+    SECTION("get_type") {
+        Func instr[] = {Func::e_addiupc,  Func::e_lwpc};
+
+        for (auto const v : instr) {
+            const auto inst = Instruction(RegisterName::e_t0, v, 3);
+            REQUIRE(instr_type_matches(inst, Type::e_pcrel_type1));
+        }
+    }
+
+    SECTION("addiupc - trivial values") {
+        Instruction t(RegisterName::e_t0, Func::e_addiupc, 0x1f4c7);
+        REQUIRE(t.raw == 0xed01f4c7);
+    }
+    
+    SECTION("lwpc - trivial values") {
+        Instruction t(RegisterName::e_t4, Func::e_lwpc, 0x3a5e0);
+        REQUIRE(t.raw == 0xed8ba5e0);
+    }
+}
+
+TEST_CASE("PCrel Type 2", "[Instruction]") {
+    using Type = Instruction::Type;
+    using Func = Instruction::PCRelFunc2;
+
+    SECTION("get_type") {
+        Func instr[] = {Func::e_auipc,    Func::e_aluipc};
+
+        for (auto const v : instr) {
+            const auto inst = Instruction(RegisterName::e_t0, v, 3);
+            REQUIRE(instr_type_matches(inst, Type::e_pcrel_type2));
+        }
+    }
+    
+    SECTION("auipc - trivial values") {
+        Instruction t(RegisterName::e_t9, Func::e_auipc, 0x0ff0);
+        REQUIRE(t.raw == 0xef3e0ff0); // Actually 0xef300ff0
+    }
+    
+    SECTION("aluipc - trivial values") {
+        Instruction t(RegisterName::e_t0, Func::e_aluipc, 0x0123);
+        REQUIRE(t.raw == 0xed1f0123); // Actually 0xed180123
+    }
+}

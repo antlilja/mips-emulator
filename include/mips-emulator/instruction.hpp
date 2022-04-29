@@ -490,7 +490,7 @@ namespace mips_emulator {
 
         Instruction(const RegisterName rs, const PCRelFunc2 func,
                     const uint16_t immediate) {
-            pcrel_type2.op = PCREL_OPCODE;
+            pcrel_type2.pcrel = PCREL_OPCODE;
             pcrel_type2.rs = static_cast<uint8_t>(rs);
             pcrel_type2.func = static_cast<uint8_t>(func);
             pcrel_type2.imm = immediate;

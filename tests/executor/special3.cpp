@@ -26,9 +26,9 @@ TEST_CASE("ext", "[Executor]") {
             const Instruction instr(R::e_ext, test[0], test[1] - 1,
                                     RegisterName::e_t1, RegisterName::e_t0);
 
-            const bool no_error =
+            const auto result =
                 Executor::handle_special3_type_ext_instr(instr, reg_file);
-            REQUIRE(no_error);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[3]);
         }
@@ -54,9 +54,9 @@ TEST_CASE("ins", "[Executor]") {
             const Instruction instr(R::e_ins, test[0], test[0] + test[1] - 1,
                                     RegisterName::e_t1, RegisterName::e_t0);
 
-            const bool no_error =
+            const auto result =
                 Executor::handle_special3_type_ins_instr(instr, reg_file);
-            REQUIRE(no_error);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[4]);
         }
@@ -85,9 +85,9 @@ TEST_CASE("bitswap", "[Executor") {
             const Instruction instr(R::e_bshfl, BSHFLOp::e_bitswap,
                                     RegisterName::e_t0, RegisterName::e_t1);
 
-            const bool no_error =
+            const auto result =
                 Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-            REQUIRE(no_error);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[1]);
         }
@@ -107,9 +107,9 @@ TEST_CASE("wsbh", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_wsbh, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x00FF00FF);
     }
@@ -123,9 +123,9 @@ TEST_CASE("wsbh", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_wsbh, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0);
     }
@@ -139,9 +139,9 @@ TEST_CASE("wsbh", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_wsbh, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == ~0U);
     }
@@ -175,9 +175,9 @@ TEST_CASE("align", "[Executor") {
                                     RegisterName::e_t0, RegisterName::e_t2,
                                     RegisterName::e_t1);
 
-            const bool no_error =
+            const auto result =
                 Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-            REQUIRE(no_error);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[3]);
         }
@@ -196,9 +196,9 @@ TEST_CASE("seh", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_seh, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0xFFFFF0F0);
     }
@@ -211,9 +211,9 @@ TEST_CASE("seh", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_seh, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x7ff1);
     }
@@ -231,9 +231,9 @@ TEST_CASE("seb", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_seb, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0xFFFFFFF8);
     }
@@ -246,9 +246,9 @@ TEST_CASE("seb", "[Executor]") {
         const Instruction instr(R::e_bshfl, BSHFLOp::e_seb, RegisterName::e_t0,
                                 RegisterName::e_t1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_special3_type_bshfl_instr(instr, reg_file);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x0000007F);
     }

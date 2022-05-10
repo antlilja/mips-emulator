@@ -18,8 +18,8 @@ TEST_CASE("j", "[Executor]") {
         Instruction instr(JOp::e_j, 0x003fc);
 
         reg_file.inc_pc(); // emulate step
-        const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_jtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         reg_file.update_pc(); // moves past delays slot
 
@@ -36,8 +36,8 @@ TEST_CASE("jal", "[Executor]") {
         Instruction instr(JOp::e_jal, 0x003fc);
 
         reg_file.update_pc(); // emulate step
-        const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_jtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         reg_file.update_pc(); // moves past delays slot
 
@@ -54,8 +54,8 @@ TEST_CASE("bc", "[Executor]") {
 
     Instruction instr(JOp::e_bc, -(0xf00 >> 2));
 
-    const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_jtype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     REQUIRE(reg_file.get_pc() == 0x10be000);
 }
@@ -68,8 +68,8 @@ TEST_CASE("balc", "[Executor]") {
 
     Instruction instr(JOp::e_balc, -(0xf00 >> 2));
 
-    const bool no_error = Executor::handle_jtype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_jtype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     REQUIRE(reg_file.get_pc() == 0x10be000);
     REQUIRE(reg_file.get(RegisterName::e_ra).u == 0x10bef00);

@@ -29,8 +29,8 @@ void test_branch_compact(const BranchTest tcase, IOp op) {
     Instruction instr(op, static_cast<RegisterName>(tcase.rt),
                       static_cast<RegisterName>(tcase.rs), 0xFFB0);
 
-    const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_itype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     REQUIRE(reg_file.get_pc() == start_pc - 0x50 * tcase.will_branch * 4 + 4);
     REQUIRE(reg_file.get(31).u == (start_pc + 4) * tcase.will_link);
@@ -46,8 +46,8 @@ void test_branch(const BranchTest tcase, IOp op) {
     Instruction instr(op, static_cast<RegisterName>(tcase.rs), 16);
 
     reg_file.inc_pc(); // Emulate step
-    const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_itype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     REQUIRE(reg_file.get_pc() == 4);
     reg_file.update_pc(); // moves past delays slot
@@ -65,9 +65,9 @@ TEST_CASE("addiu", "[Executor]") {
 
         Instruction instr(IOp::e_addiu, RegisterName::e_t1, RegisterName::e_t0,
                           333);
-        
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 123789);
     }
@@ -75,13 +75,13 @@ TEST_CASE("addiu", "[Executor]") {
     SECTION("No overflow error") {
         using Address = typename RegisterFile::Unsigned;
         RegisterFile reg_file;
-        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX-1);
+        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX - 1);
 
         Instruction instr(IOp::e_addiu, RegisterName::e_t1, RegisterName::e_t0,
                           15);
-        
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 13);
     }
@@ -97,8 +97,8 @@ TEST_CASE("andi", "[Executor]") {
         Instruction instr(IOp::e_andi, RegisterName::e_t1, RegisterName::e_t0,
                           0b1010);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b1000);
     }
@@ -114,8 +114,8 @@ TEST_CASE("ori", "[Executor]") {
         Instruction instr(IOp::e_ori, RegisterName::e_t1, RegisterName::e_t0,
                           0b1010);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b1110);
     }
@@ -131,8 +131,8 @@ TEST_CASE("xori", "[Executor]") {
         Instruction instr(IOp::e_xori, RegisterName::e_t1, RegisterName::e_t0,
                           0b1010);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0b0110);
     }
@@ -148,8 +148,8 @@ TEST_CASE("aui", "[Executor]") {
         Instruction instr(IOp::e_aui, RegisterName::e_t1, RegisterName::e_t0,
                           0xbeef);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xbeef1337);
     }
@@ -166,8 +166,8 @@ TEST_CASE("slti", "[Executor]") {
         Instruction instr(IOp::e_slti, RegisterName::e_t1, RegisterName::e_t0,
                           2);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 1);
     }
@@ -183,8 +183,8 @@ TEST_CASE("sltiu", "[Executor]") {
         Instruction instr(IOp::e_sltiu, RegisterName::e_t1, RegisterName::e_t0,
                           2);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0);
     }
@@ -202,8 +202,8 @@ TEST_CASE("beq", "[Executor]") {
                           16);
 
         reg_file.inc_pc(); // emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 4);
 
@@ -222,8 +222,8 @@ TEST_CASE("beq", "[Executor]") {
                           16);
 
         reg_file.inc_pc(); // emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 4);
 
@@ -245,8 +245,8 @@ TEST_CASE("bne", "[Executor]") {
                           16);
 
         reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 4);
 
@@ -266,8 +266,8 @@ TEST_CASE("bne", "[Executor]") {
                           16);
 
         reg_file.inc_pc(); // Emulate step
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 4);
 
@@ -329,9 +329,9 @@ TEST_CASE("load instructions", "[Executor]") {
 
         Instruction instr(IOp::e_lb, RegisterName::e_t1, RegisterName::e_t0, 1);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x22);
     }
@@ -342,9 +342,9 @@ TEST_CASE("load instructions", "[Executor]") {
 
         Instruction instr(IOp::e_lb, RegisterName::e_t1, RegisterName::e_t0, 0);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFFFF80);
     }
@@ -355,9 +355,9 @@ TEST_CASE("load instructions", "[Executor]") {
 
         Instruction instr(IOp::e_lh, RegisterName::e_t1, RegisterName::e_t0, 0);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x2280);
     }
@@ -368,9 +368,9 @@ TEST_CASE("load instructions", "[Executor]") {
 
         Instruction instr(IOp::e_lh, RegisterName::e_t1, RegisterName::e_t0, 2);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0xFFFF8022);
     }
@@ -382,9 +382,9 @@ TEST_CASE("load instructions", "[Executor]") {
         Instruction instr(IOp::e_lhu, RegisterName::e_t1, RegisterName::e_t0,
                           2);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x00008022);
     }
@@ -396,9 +396,9 @@ TEST_CASE("load instructions", "[Executor]") {
         Instruction instr(IOp::e_lbu, RegisterName::e_t1, RegisterName::e_t0,
                           0);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x80);
     }
@@ -411,9 +411,9 @@ TEST_CASE("load instructions", "[Executor]") {
         Instruction instr(IOp::e_lw, RegisterName::e_t1, RegisterName::e_t0,
                           0xFFF0);
 
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t1).u == 0x80222280);
     }
@@ -429,9 +429,9 @@ TEST_CASE("store instructions", "[Executor]") {
 
         Instruction instr(IOp::e_sb, RegisterName::e_t1, RegisterName::e_t0,
                           0xFFF0);
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         auto read_mem = memory.template read<uint8_t>(4);
         REQUIRE(!read_mem.is_error());
@@ -445,9 +445,9 @@ TEST_CASE("store instructions", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 0x10096);
 
         Instruction instr(IOp::e_sh, RegisterName::e_t1, RegisterName::e_t0, 0);
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         auto read_mem = memory.template read<uint16_t>(20);
         REQUIRE(!read_mem.is_error());
@@ -461,9 +461,9 @@ TEST_CASE("store instructions", "[Executor]") {
         reg_file.set_unsigned(RegisterName::e_t1, 0x96);
 
         Instruction instr(IOp::e_sw, RegisterName::e_t1, RegisterName::e_t0, 0);
-        const bool no_error =
+        const auto result =
             Executor::handle_itype_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         auto read_mem = memory.template read<uint32_t>(20);
         REQUIRE(!read_mem.is_error());
@@ -727,8 +727,8 @@ TEST_CASE("pop66 - compact") {
                               0b11111), // all ones for upper 5 bits of long imm
                           RegisterName::e_t0, -0x8);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0x100);
     }
@@ -742,8 +742,8 @@ TEST_CASE("pop66 - compact") {
                               0b11111), // all ones for upper 5 bits of long imm
                           RegisterName::e_t0, -0b11);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0x100 - 0b1100);
     }
@@ -755,8 +755,8 @@ TEST_CASE("pop66 - compact") {
         Instruction instr(IOp::e_pop66, RegisterName::e_t0, RegisterName::e_0,
                           -0xf);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0xbee0);
     }
@@ -775,8 +775,8 @@ TEST_CASE("pop76 - compact") {
                               0b11111), // all ones for upper 5 bits of long imm
                           RegisterName::e_t0, -0x8);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0x100);
     }
@@ -790,8 +790,8 @@ TEST_CASE("pop76 - compact") {
                               0b11111), // all ones for upper 5 bits of long imm
                           RegisterName::e_t0, -0b11);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0x100 - 0b1100);
     }
@@ -803,8 +803,8 @@ TEST_CASE("pop76 - compact") {
         Instruction instr(IOp::e_pop76, RegisterName::e_t0, RegisterName::e_0,
                           -0xf);
 
-        const bool no_error = Executor::handle_itype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_itype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0xbee0);
 

@@ -20,8 +20,8 @@ TEST_CASE("add", "[Executor]") {
         Instruction instr(Func::e_add, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 6);
     }
@@ -37,9 +37,9 @@ TEST_CASE("addu", "[Executor]") {
 
         Instruction instr(Func::e_addu, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 10);
     }
@@ -47,14 +47,14 @@ TEST_CASE("addu", "[Executor]") {
     SECTION("No overflow error") {
         using Address = typename RegisterFile::Unsigned;
         RegisterFile reg_file;
-        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX-1);
+        reg_file.set_unsigned(RegisterName::e_t0, UINT32_MAX - 1);
         reg_file.set_unsigned(RegisterName::e_t1, 2);
 
         Instruction instr(Func::e_addu, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 0);
     }
@@ -71,8 +71,8 @@ TEST_CASE("sub", "[Executor]") {
         Instruction instr(Func::e_sub, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 9);
     }
@@ -88,8 +88,8 @@ TEST_CASE("sub", "[Executor]") {
         Instruction instr(Func::e_sub, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 2);
     }
@@ -105,9 +105,9 @@ TEST_CASE("subu", "[Executor]") {
 
         Instruction instr(Func::e_subu, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 14);
     }
@@ -120,11 +120,12 @@ TEST_CASE("subu", "[Executor]") {
 
         Instruction instr(Func::e_subu, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
 
-        REQUIRE(reg_file.get(RegisterName::e_t2).u == 1); // Is that how the subtraction works?
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u ==
+                1); // Is that how the subtraction works?
     }
 }
 
@@ -138,9 +139,9 @@ TEST_CASE("and", "[Executor]") {
 
         Instruction instr(Func::e_and, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b1000);
     }
@@ -157,8 +158,8 @@ TEST_CASE("or", "[Executor]") {
         Instruction instr(Func::e_or, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b1011);
     }
@@ -173,11 +174,12 @@ TEST_CASE("nor", "[Executor]") {
 
         Instruction instr(Func::e_nor, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
 
-        REQUIRE(reg_file.get(RegisterName::e_t2).u == ((0xfffffff0) | (0b0100)));
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
+
+        REQUIRE(reg_file.get(RegisterName::e_t2).u ==
+                ((0xfffffff0) | (0b0100)));
     }
 }
 
@@ -190,9 +192,9 @@ TEST_CASE("xor", "[Executor]") {
 
         Instruction instr(Func::e_xor, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 0b0011);
     }
@@ -208,8 +210,8 @@ TEST_CASE("sll", "[Executor]") {
         const Instruction instr(Func::e_sll, RegisterName::e_t0,
                                 RegisterName::e_0, RegisterName::e_t1, 4);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 1975296);
     }
@@ -227,8 +229,8 @@ TEST_CASE("sllv", "[Executor]") {
         const Instruction instr(Func::e_sllv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 1975296);
     }
@@ -243,8 +245,8 @@ TEST_CASE("sllv", "[Executor]") {
         const Instruction instr(Func::e_sllv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 2);
     }
@@ -260,8 +262,8 @@ TEST_CASE("sra", "[Executor]") {
         const Instruction instr(Func::e_sra, RegisterName::e_t0,
                                 RegisterName::e_0, RegisterName::e_t1, 4);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 7716);
     }
@@ -275,8 +277,8 @@ TEST_CASE("sra", "[Executor]") {
         const Instruction instr(Func::e_sra, RegisterName::e_t0,
                                 RegisterName::e_0, RegisterName::e_t1, 4);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == -7716);
     }
@@ -293,8 +295,8 @@ TEST_CASE("srav", "[Executor]") {
         const Instruction instr(Func::e_srav, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 7716);
     }
@@ -309,8 +311,8 @@ TEST_CASE("srav", "[Executor]") {
         const Instruction instr(Func::e_srav, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == -7716);
     }
@@ -325,8 +327,8 @@ TEST_CASE("srav", "[Executor]") {
         const Instruction instr(Func::e_srav, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 1);
     }
@@ -342,8 +344,8 @@ TEST_CASE("srl", "[Executor]") {
         const Instruction instr(Func::e_srl, RegisterName::e_t0,
                                 RegisterName::e_0, RegisterName::e_t1, 4);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 7716);
     }
@@ -360,8 +362,8 @@ TEST_CASE("srlv", "[Executor]") {
         const Instruction instr(Func::e_srlv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 7716);
     }
@@ -376,8 +378,8 @@ TEST_CASE("srlv", "[Executor]") {
         const Instruction instr(Func::e_srlv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 1);
     }
@@ -394,8 +396,8 @@ TEST_CASE("rotr", "[Executor]") {
         const Instruction instr(Func::e_srl, RegisterName::e_t0, rotr_rs,
                                 RegisterName::e_t1, amount);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
     };
@@ -427,8 +429,8 @@ TEST_CASE("rotrv", "[Executor]") {
         const Instruction instr(Func::e_srlv, RegisterName::e_t0,
                                 RegisterName::e_t2, RegisterName::e_t1, 1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == output);
     };
@@ -460,8 +462,8 @@ TEST_CASE("slt", "[Executor]") {
         Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
     }
 
@@ -474,8 +476,8 @@ TEST_CASE("slt", "[Executor]") {
         Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
     }
@@ -491,8 +493,8 @@ TEST_CASE("sltu", "[Executor]") {
         Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 0);
     }
@@ -506,8 +508,8 @@ TEST_CASE("sltu", "[Executor]") {
         Instruction instr(Func::e_slt, RegisterName::e_t2, RegisterName::e_t0,
                           RegisterName::e_t1);
 
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 1);
     }
@@ -526,8 +528,8 @@ TEST_CASE("jr", "[Executor]") {
                       RegisterName::e_0);
 
     reg_file.update_pc(); // emulate step
-    const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_rtype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     reg_file.update_pc(); // moves past delays slot
 
@@ -546,8 +548,8 @@ TEST_CASE("jalr", "[Executor]") {
                       RegisterName::e_0);
 
     reg_file.update_pc(); // emulate step
-    const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_rtype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     reg_file.update_pc(); // moves past delays slot
 
@@ -571,9 +573,9 @@ TEST_CASE("sop30", "[Executor]") {
                 Instruction instr(Func::e_sop30, RegisterName::e_t0,
                                   RegisterName::e_t0, RegisterName::e_t1, 2);
 
-                const bool no_error =
+                const auto result =
                     Executor::handle_rtype_instr(instr, reg_file);
-                REQUIRE(no_error);
+                REQUIRE(result == ExecResult::e_ok);
 
                 REQUIRE(reg_file.get(RegisterName::e_t0).s == val1 * val2);
             }
@@ -598,8 +600,8 @@ TEST_CASE("sop30", "[Executor]") {
             Instruction instr(Func::e_sop30, RegisterName::e_t0,
                               RegisterName::e_t0, RegisterName::e_t1, 3);
 
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).s == res);
         }
@@ -621,9 +623,9 @@ TEST_CASE("sop31", "[Executor]") {
                 Instruction instr(Func::e_sop31, RegisterName::e_t0,
                                   RegisterName::e_t0, RegisterName::e_t1, 2);
 
-                const bool no_error =
+                const auto result =
                     Executor::handle_rtype_instr(instr, reg_file);
-                REQUIRE(no_error);
+                REQUIRE(result == ExecResult::e_ok);
 
                 REQUIRE(reg_file.get(RegisterName::e_t0).u == val1 * val2);
             }
@@ -648,8 +650,8 @@ TEST_CASE("sop31", "[Executor]") {
             Instruction instr(Func::e_sop30, RegisterName::e_t0,
                               RegisterName::e_t0, RegisterName::e_t1, 3);
 
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == res);
         }
@@ -663,11 +665,11 @@ TEST_CASE("sop32") {
         reg_file.set_signed(RegisterName::e_t0, 11);
         reg_file.set_signed(RegisterName::e_t1, -2);
 
-        Instruction instr(Func::e_sop32, RegisterName::e_t3,
-                          RegisterName::e_t0, RegisterName::e_t1, 2);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        Instruction instr(Func::e_sop32, RegisterName::e_t3, RegisterName::e_t0,
+                          RegisterName::e_t1, 2);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t3).s == -5);
     }
@@ -677,11 +679,11 @@ TEST_CASE("sop32") {
         reg_file.set_signed(RegisterName::e_t0, -11);
         reg_file.set_signed(RegisterName::e_t1, -2);
 
-        Instruction instr(Func::e_sop32, RegisterName::e_t3,
-                          RegisterName::e_t0, RegisterName::e_t1, 2);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        Instruction instr(Func::e_sop32, RegisterName::e_t3, RegisterName::e_t0,
+                          RegisterName::e_t1, 2);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t3).s == 5);
     }
@@ -691,11 +693,11 @@ TEST_CASE("sop32") {
         reg_file.set_signed(RegisterName::e_t0, -11);
         reg_file.set_signed(RegisterName::e_t1, 2);
 
-        Instruction instr(Func::e_sop32, RegisterName::e_t3,
-                          RegisterName::e_t0, RegisterName::e_t1, 3);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        Instruction instr(Func::e_sop32, RegisterName::e_t3, RegisterName::e_t0,
+                          RegisterName::e_t1, 3);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t3).s == -1);
     }
@@ -705,11 +707,11 @@ TEST_CASE("sop32") {
         reg_file.set_signed(RegisterName::e_t0, 11);
         reg_file.set_signed(RegisterName::e_t1, -2);
 
-        Instruction instr(Func::e_sop32, RegisterName::e_t3,
-                          RegisterName::e_t0, RegisterName::e_t1, 3);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        Instruction instr(Func::e_sop32, RegisterName::e_t3, RegisterName::e_t0,
+                          RegisterName::e_t1, 3);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t3).s == 1);
     }
@@ -722,11 +724,11 @@ TEST_CASE("sop33") {
         reg_file.set_unsigned(RegisterName::e_t0, 11);
         reg_file.set_unsigned(RegisterName::e_t1, 2);
 
-        Instruction instr(Func::e_sop33, RegisterName::e_t3,
-                          RegisterName::e_t0, RegisterName::e_t1, 2);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        Instruction instr(Func::e_sop33, RegisterName::e_t3, RegisterName::e_t0,
+                          RegisterName::e_t1, 2);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t3).s == 5);
     }
@@ -736,11 +738,11 @@ TEST_CASE("sop33") {
         reg_file.set_unsigned(RegisterName::e_t0, 11);
         reg_file.set_unsigned(RegisterName::e_t1, 2);
 
-        Instruction instr(Func::e_sop33, RegisterName::e_t3,
-                          RegisterName::e_t0, RegisterName::e_t1, 3);
-        
-        const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-        REQUIRE(no_error);
+        Instruction instr(Func::e_sop33, RegisterName::e_t3, RegisterName::e_t0,
+                          RegisterName::e_t1, 3);
+
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t3).s == 1);
     }
@@ -756,8 +758,8 @@ TEST_CASE("sel", "[Executor]") {
         SECTION("eqz") {
             Instruction instr(Func::e_seleqz, RegisterName::e_t2,
                               RegisterName::e_t0, RegisterName::e_t1);
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t2).u == 10);
         }
@@ -765,8 +767,8 @@ TEST_CASE("sel", "[Executor]") {
         SECTION("nez") {
             Instruction instr(Func::e_selnez, RegisterName::e_t2,
                               RegisterName::e_t0, RegisterName::e_t1);
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t2).u == 0);
         }
@@ -781,8 +783,8 @@ TEST_CASE("sel", "[Executor]") {
         SECTION("eqz") {
             Instruction instr(Func::e_seleqz, RegisterName::e_t2,
                               RegisterName::e_t0, RegisterName::e_t1);
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t2).u == 0);
         }
@@ -790,8 +792,8 @@ TEST_CASE("sel", "[Executor]") {
         SECTION("nez") {
             Instruction instr(Func::e_selnez, RegisterName::e_t2,
                               RegisterName::e_t0, RegisterName::e_t1);
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t2).u == 10);
         }
@@ -813,8 +815,8 @@ TEST_CASE("clz", "[Executor]") {
             const Instruction instr(Func::e_clz, RegisterName::e_t0,
                                     RegisterName::e_t1, RegisterName::e_0, 1);
 
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[1]);
         }
@@ -836,8 +838,8 @@ TEST_CASE("clo", "[Executor]") {
             const Instruction instr(Func::e_clo, RegisterName::e_t0,
                                     RegisterName::e_t1, RegisterName::e_0, 1);
 
-            const bool no_error = Executor::handle_rtype_instr(instr, reg_file);
-            REQUIRE(no_error);
+            const auto result = Executor::handle_rtype_instr(instr, reg_file);
+            REQUIRE(result == ExecResult::e_ok);
 
             REQUIRE(reg_file.get(RegisterName::e_t0).u == test[1]);
         }
@@ -853,10 +855,11 @@ TEST_CASE("TRAP INSTRUCTIONS") {
 
         const Instruction instr(func, RegisterName::e_0, RegisterName::e_t0,
                                 RegisterName::e_t1, 0);
-        bool result = Executor::handle_rtype_instr(instr, reg_file);
+        const auto result = Executor::handle_rtype_instr(instr, reg_file);
 
-        REQUIRE(result != trap);
-        if (trap) REQUIRE(reg_file.get_bad_instr() == instr.raw);
+        const auto required_res = trap ? ExecResult::e_trap : ExecResult::e_ok;
+
+        REQUIRE(result == required_res);
     };
 
     SECTION("TEQ") {

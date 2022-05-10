@@ -29,10 +29,9 @@ TEST_CASE("step", "[Executor]") {
         auto store_result = memory.template store<uint32_t>(0, instr.raw);
         REQUIRE_FALSE(store_result.is_error());
 
-        const bool no_error =
-            Executor::step<StaticMemory<256>>(reg_file, memory);
+        const auto result = Executor::step<StaticMemory<256>>(reg_file, memory);
 
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).s == 7);
         REQUIRE(reg_file.get_pc() == 4);
@@ -46,10 +45,9 @@ TEST_CASE("step", "[Executor]") {
         auto store_result = memory.template store<uint32_t>(0, instr.raw);
         REQUIRE_FALSE(store_result.is_error());
 
-        const bool no_error =
-            Executor::step<StaticMemory<256>>(reg_file, memory);
+        const auto result = Executor::step<StaticMemory<256>>(reg_file, memory);
 
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t2).u == 3);
         REQUIRE(reg_file.get_pc() == 4);
@@ -74,16 +72,28 @@ TEST_CASE("delay slot", "[Executor]") {
         memory.template store<uint32_t>(0, instr_jump.raw);
         memory.template store<uint32_t>(4, instr_delay.raw);
 
-        const bool no_error1 =
+        const auto result1 =
             Executor::step<StaticMemory<256>>(reg_file, memory);
-        REQUIRE(no_error1);
+        REQUIRE(result1 == ExecResult::e_ok);
         REQUIRE(reg_file.get_pc() == 4);
 
-        const bool no_error2 =
+        const auto result2 =
             Executor::step<StaticMemory<256>>(reg_file, memory);
-        REQUIRE(no_error2);
+        REQUIRE(result2 == ExecResult::e_ok);
 
         REQUIRE(reg_file.get_pc() == 0x14);
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 777);
     }
+}
+
+TEST_CASE("Last instruction", "[Executor]") {
+    StaticMemory<256> memory;
+    memory.store_no_mmio(0, 0xffffffff);
+
+    RegisterFile reg_file;
+    reg_file.set_pc(0);
+
+    const auto result = Executor::step(reg_file, memory);
+
+    REQUIRE(reg_file.get_last_instr() == 0xffffffff);
 }

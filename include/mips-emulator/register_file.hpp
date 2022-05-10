@@ -14,22 +14,6 @@ namespace mips_emulator {
             Signed s;
         };
 
-        // http://www.it.uu.se/education/course/homepage/os/vt18/module-1/mips-coprocessor-0/#cause-register-13
-        enum class Exception {
-            e_int = 0,
-            e_ad_el = 4,
-            e_ad_es = 5,
-            // e_ibe = 6,
-            // e_dbe = 7,
-            e_sys = 8,
-            e_bp = 9,
-            e_ri = 10,
-            e_cpu = 11,
-            e_ov = 12,
-            e_tr = 13,
-            e_fpe = 14,
-        };
-
         // Make sure we only have one word size
         static_assert(sizeof(Unsigned) == sizeof(Signed),
                       "Unsigned and Signed types are not the same size");
@@ -96,29 +80,14 @@ namespace mips_emulator {
             branch_flag = false;
         }
 
-        // bad_instr is set on signalexceptions and will contain info on the
-        // exception raised.
-        void signal_exception(const Exception cause,
-                              const uint32_t instr) noexcept {
-            bad_instr = instr;
-            cause_register = cause;
-        }
-
-        uint32_t get_bad_instr() const noexcept { return bad_instr; }
-        uint8_t get_cause_register() const noexcept {
-            return static_cast<uint8_t>(cause_register);
-        }
+        void set_last_instr(Unsigned instr) { last_instr = instr; }
+        Unsigned get_last_instr() const { return last_instr; }
 
     private:
         bool branch_flag = false;
         Unsigned branch_target = 0;
 
-        // bad_instr (BadInstr in docs) contains instruction that signaled an
-        // exception/trap)
-        Unsigned bad_instr = 0;
-
-        // cause register contains the cause of a signaled exception
-        Exception cause_register;
+        Unsigned last_instr = 0;
 
         Unsigned pc = 0;
         Register regs[REGISTER_COUNT] = {};

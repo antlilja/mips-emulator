@@ -23,9 +23,9 @@ TEST_CASE("addiupc", "[Executor]") {
     SECTION("Trivial imm-value") {
         Instruction instr(RegisterName::e_t0, Func1::e_addiupc, 0x01234);
 
-        const bool no_error = 
+        const auto result =
             Executor::handle_pcrel_type1_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10bf37d0);
     }
@@ -33,9 +33,9 @@ TEST_CASE("addiupc", "[Executor]") {
     SECTION("Min imm-value") {
         Instruction instr(RegisterName::e_t0, Func1::e_addiupc, -INT32_MAX);
 
-        const bool no_error = 
+        const auto result =
             Executor::handle_pcrel_type1_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10beef04);
     }
@@ -43,9 +43,9 @@ TEST_CASE("addiupc", "[Executor]") {
     SECTION("Imm-value 0") {
         Instruction instr(RegisterName::e_t0, Func1::e_addiupc, 0);
 
-        const bool no_error = 
+        const auto result =
             Executor::handle_pcrel_type1_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10beef00);
     }
@@ -53,9 +53,9 @@ TEST_CASE("addiupc", "[Executor]") {
     SECTION("Max imm-value") {
         Instruction instr(RegisterName::e_t0, Func1::e_addiupc, INT32_MAX);
 
-        const bool no_error = 
+        const auto result =
             Executor::handle_pcrel_type1_instr(instr, reg_file, memory);
-        REQUIRE(no_error);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10deeefc);
     }
@@ -70,9 +70,9 @@ TEST_CASE("addiupc", "[Executor]") {
 //     SECTION("Trivial imm-value") {
 //         Instruction instr(RegisterName::e_t0, Func1::e_lwpc, 0x0123);
 
-//         const bool no_error = 
+//         const auto result = 
 //             Executor::handle_pcrel_type1_instr(instr, reg_file, memory);
-//         REQUIRE(no_error);
+//         REQUIRE(result == ExecResult::e_ok);
 
 //         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0);
 //     }
@@ -86,8 +86,8 @@ TEST_CASE("auipc", "[Executor]") {
     SECTION("Trivial imm-value") {
         Instruction instr(RegisterName::e_t0, Func2::e_auipc, 0x0123);
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x11e1ef00);
     }
@@ -95,8 +95,8 @@ TEST_CASE("auipc", "[Executor]") {
     SECTION("Min imm-value") {
         Instruction instr(RegisterName::e_t0, Func2::e_auipc, (uint16_t)(-INT32_MAX)); // INT32_MIN apparently does not want to cooperate
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10bfef00);
     }
@@ -104,8 +104,8 @@ TEST_CASE("auipc", "[Executor]") {
     SECTION("Imm-value zero") {
         Instruction instr(RegisterName::e_t0, Func2::e_auipc, 0);
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10beef00);
     }
@@ -113,8 +113,8 @@ TEST_CASE("auipc", "[Executor]") {
     SECTION("Max imm-value") {
         Instruction instr(RegisterName::e_t0, Func2::e_auipc, (uint16_t)(INT32_MAX));
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10bdef00);
     }
@@ -126,8 +126,8 @@ TEST_CASE("aluipc", "[Executor]") {
     SECTION("Trivial imm-value") {
         Instruction instr(RegisterName::e_t0, Func2::e_aluipc, 0x0123);
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x11e10000);
     }
@@ -135,8 +135,8 @@ TEST_CASE("aluipc", "[Executor]") {
     SECTION("Min imm-value") {
         Instruction instr(RegisterName::e_t0, Func2::e_aluipc, (uint16_t)(-INT32_MAX));
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10bf0000);
     }
@@ -144,8 +144,8 @@ TEST_CASE("aluipc", "[Executor]") {
     SECTION("Imm-value zero") {
         Instruction instr(RegisterName::e_t0, Func2::e_aluipc, 0);
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10be0000);
     }
@@ -153,8 +153,8 @@ TEST_CASE("aluipc", "[Executor]") {
     SECTION("Max imm-value") {
         Instruction instr(RegisterName::e_t0, Func2::e_aluipc, (uint16_t)(INT32_MAX));
 
-        const bool no_error = Executor::handle_pcrel_type2_instr(instr, reg_file);
-        REQUIRE(no_error);
+        const auto result = Executor::handle_pcrel_type2_instr(instr, reg_file);
+        REQUIRE(result == ExecResult::e_ok);
 
         REQUIRE(reg_file.get(RegisterName::e_t0).u == 0x10bd0000);
     }

@@ -4,6 +4,15 @@
 #include "register_file.hpp"
 
 namespace mips_emulator {
+    enum ExecResult : uint8_t {
+        e_ok,
+        e_read_error,
+        e_write_Error,
+        e_overflow,
+        e_trap,
+        e_bad_instr,
+    };
+
     namespace Executor {
         // Returns the higher 32 bits of a multiplication
         template <typename small_t, typename big_t>
@@ -13,7 +22,7 @@ namespace mips_emulator {
             return static_cast<small_t>((a64 * b64) >> 32);
         };
 
-        [[nodiscard]] inline static bool
+        [[nodiscard]] inline static ExecResult
         handle_rtype_instr(const Instruction instr, RegisterFile& reg_file) {
 
             using Register = RegisterFile::Register;
@@ -29,14 +38,6 @@ namespace mips_emulator {
             auto sop_set_rd = [&](uint32_t shamt2, uint32_t shamt3) {
                 reg_file.set_signed(instr.rtype.rd,
                                     instr.rtype.shamt == 2 ? shamt2 : shamt3);
-            };
-
-            // Conditional Trap Helper function
-            auto trap_on_cond = [&](bool condition) {
-                using Cause = RegisterFile::Exception;
-                if (condition)
-                    reg_file.signal_exception(Cause::e_tr, instr.raw);
-                return !condition;
             };
 
             switch (func) {
@@ -67,15 +68,17 @@ namespace mips_emulator {
                     break;
                 }
                 case Func::e_sop32: { // Shamt: 2 = div, 3 = mod
-                    // division by zero check
-                    if (rt.s == 0) return false;
+                                      // division by zero check
+                    // Zero division is undefined, thus we do nothing
+                    if (rt.s == 0) return ExecResult::e_ok;
 
                     sop_set_rd(rs.s / rt.s, rs.s % rt.s);
                     break;
                 }
                 case Func::e_sop33: { // Shamt: 2 = divu, 3 = modu
-                    // division by zero check
-                    if (rt.s == 0) return false;
+                                      // division by zero check
+                    // Zero division is undefined, thus we do nothing
+                    if (rt.s == 0) return ExecResult::e_ok;
 
                     sop_set_rd(rs.u / rt.u, rs.u % rt.u);
                     break;
@@ -214,18 +217,24 @@ namespace mips_emulator {
                     break;
                 }
 
-                // Trap instructions
-                case Func::e_teq: return trap_on_cond(rs.u == rt.u);
-                case Func::e_tge: return trap_on_cond(rs.s >= rt.s);
-                case Func::e_tgeu: return trap_on_cond(rs.u >= rt.u);
-                case Func::e_tlt: return trap_on_cond(rs.s < rt.s);
-                case Func::e_tltu: return trap_on_cond(rs.u < rt.u);
-                case Func::e_tne: return trap_on_cond(rs.u != rt.u);
+                    // Trap instructions
+                case Func::e_teq:
+                    return rs.u == rt.u ? ExecResult::e_trap : ExecResult::e_ok;
+                case Func::e_tge:
+                    return rs.s >= rt.s ? ExecResult::e_trap : ExecResult::e_ok;
+                case Func::e_tgeu:
+                    return rs.u >= rt.u ? ExecResult::e_trap : ExecResult::e_ok;
+                case Func::e_tlt:
+                    return rs.s < rt.s ? ExecResult::e_trap : ExecResult::e_ok;
+                case Func::e_tltu:
+                    return rs.u < rt.u ? ExecResult::e_trap : ExecResult::e_ok;
+                case Func::e_tne:
+                    return rs.u != rt.u ? ExecResult::e_trap : ExecResult::e_ok;
 
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename T>
@@ -244,7 +253,7 @@ namespace mips_emulator {
             return ((ext * ((imm >> 25) & 1)) | imm);
         }
 
-        [[nodiscard]] inline static bool
+        [[nodiscard]] inline static ExecResult
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file) {
             using Register = RegisterFile::Register;
             using IOp = Instruction::ITypeOpcode;
@@ -512,14 +521,14 @@ namespace mips_emulator {
                     break;
                 }
 
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename Memory>
-        [[nodiscard]] inline static bool
+        [[nodiscard]] inline static ExecResult
         handle_itype_instr(const Instruction instr, RegisterFile& reg_file,
                            Memory& memory) {
             using Register = RegisterFile::Register;
@@ -534,7 +543,8 @@ namespace mips_emulator {
                 auto store_result =
                     memory.template store<decltype(val)>(address, val);
 
-                return !store_result.is_error();
+                return store_result.is_error() ? ExecResult::e_write_Error
+                                               : ExecResult::e_ok;
             };
 
             // Use Unused Variable a for its type.
@@ -542,26 +552,26 @@ namespace mips_emulator {
                 const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
                 auto read_result = memory.template read<decltype(a)>(address);
 
-                if (read_result.is_error()) return false;
+                if (read_result.is_error()) return ExecResult::e_read_error;
 
                 reg_file.set_signed(
                     instr.itype.rt,
                     static_cast<int32_t>(read_result.get_value()));
 
-                return true;
+                return ExecResult::e_ok;
             };
 
             const auto load_val_unsigned = [&](auto a) {
                 const uint32_t address = rs.u + sign_ext_imm(instr.itype.imm);
                 auto read_result = memory.template read<decltype(a)>(address);
 
-                if (read_result.is_error()) return false;
+                if (read_result.is_error()) return ExecResult::e_write_Error;
 
                 reg_file.set_unsigned(
                     instr.itype.rt,
                     static_cast<uint32_t>(read_result.get_value()));
 
-                return true;
+                return ExecResult::e_ok;
             };
 
             switch (op) {
@@ -618,10 +628,10 @@ namespace mips_emulator {
                     break;
                 }
 
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename RegisterFile>
@@ -702,10 +712,10 @@ namespace mips_emulator {
                                               (rt.u & 0xFFFF));
                     break;
                 }
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename RegisterFile>
@@ -719,16 +729,16 @@ namespace mips_emulator {
             const uint32_t size = instr.special3_type_ext.msbd + 1;
             const uint32_t lsb = instr.special3_type_ext.lsb;
 
-            // Error cases
+            // Error cases which are undefined
             if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
-                return false;
+                return ExecResult::e_ok;
 
             const uint32_t mask = (size == 32) ? ~0 : ((1 << size) - 1) << lsb;
             const uint32_t bitfield =
                 (reg_file.get(instr.special3_type.rs).u & mask);
             reg_file.set_unsigned(instr.special3_type.rt, bitfield >> lsb);
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename RegisterFile>
@@ -743,9 +753,9 @@ namespace mips_emulator {
             const uint32_t lsb = instr.special3_type_ins.lsb;
             const uint32_t size = msb - lsb + 1;
 
-            // Error cases
+            // Error cases which are undefined
             if (lsb >= 32 || size == 0 || size > 32 || lsb + size > 32)
-                return false;
+                return ExecResult::e_ok;
 
             // Mask out the lowest 'size' bits from rs register
             uint32_t mask = (size == 32) ? ~0 : (1 << size) - 1;
@@ -756,7 +766,7 @@ namespace mips_emulator {
             const uint32_t val = (rt.u & mask) | (bitfield << lsb);
             reg_file.set_unsigned(instr.special3_type.rt, val);
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         [[nodiscard]] inline static bool
@@ -787,10 +797,10 @@ namespace mips_emulator {
                     break;
                 }
 
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename Memory>
@@ -832,16 +842,16 @@ namespace mips_emulator {
                 case Func::e_lwpc: {
                     const auto read_result =
                         memory.template read<uint32_t>(address);
-                    if (read_result.is_error()) return false;
+                    if (read_result.is_error()) return ExecResult::e_read_error;
 
                     reg_file.set_unsigned(instr.pcrel_type1.rs,
                                           read_result.get_value());
                     break;
                 }
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         [[nodiscard]] inline static bool
@@ -883,10 +893,10 @@ namespace mips_emulator {
                     reg_file.set_unsigned(instr.pcrel_type2.rs, address);
                     break;
                 }
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
 
-            return true;
+            return ExecResult::e_ok;
         }
 
         template <typename Memory>
@@ -897,14 +907,16 @@ namespace mips_emulator {
             auto read_result =
                 memory.template read<uint32_t>(reg_file.get_pc());
 
-            if (read_result.is_error()) return false;
+            if (read_result.is_error()) return ExecResult::e_read_error;
             const auto instr = Instruction(read_result.get_value());
+
+            reg_file.set_last_instr(instr.raw);
 
             reg_file.update_pc();
 
             const auto instr_type = instr.get_type();
 
-            if (instr_type.is_error()) return false;
+            if (instr_type.is_error()) return ExecResult::e_bad_instr;
 
             switch (instr_type.get_value()) {
                 case Type::e_rtype: return handle_rtype_instr(instr, reg_file);
@@ -914,15 +926,15 @@ namespace mips_emulator {
                 case Type::e_jtype: return handle_jtype_instr(instr, reg_file);
                 case Type::e_fpu_rtype: {
                     // TODO: Handle FPU R-Type instructions
-                    return false;
+                    return ExecResult::e_bad_instr;
                 }
                 case Type::e_fpu_ttype: {
                     // TODO: Handle FPU Transfer instructions
-                    return false;
+                    return ExecResult::e_bad_instr;
                 }
                 case Type::e_fpu_btype: {
                     // TODO: Handle FPU Brach instructions
-                    return false;
+                    return ExecResult::e_bad_instr;
                 }
 
                     // Special 3
@@ -943,7 +955,7 @@ namespace mips_emulator {
                 case Type::e_pcrel_type2:
                     return handle_pcrel_type2_instr(instr, reg_file);
 
-                default: return false;
+                default: return ExecResult::e_bad_instr;
             }
         }
     }; // namespace Executor

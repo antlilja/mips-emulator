@@ -22,8 +22,8 @@ void test_branch(const BranchTest tcase, IOp op) {
     Instruction instr(op, static_cast<RegisterName>(tcase.rs), 0xFFF0);
 
     reg_file.inc_pc(); // Emulate step
-    const bool no_error = Executor::handle_regimm_itype_instr(instr, reg_file);
-    REQUIRE(no_error);
+    const auto result = Executor::handle_regimm_itype_instr(instr, reg_file);
+    REQUIRE(result == ExecResult::e_ok);
 
     REQUIRE(reg_file.get_pc() == 4);
     reg_file.update_pc(); // moves past delays slot
@@ -60,9 +60,7 @@ TEST_CASE("bgez", "[Executor]") {
         test_branch(tcase, IOp::e_bgez);
     };
 
-    SECTION("Equal to 0 (Branch)") {
-        test({10, 0, true});
-    }
+    SECTION("Equal to 0 (Branch)") { test({10, 0, true}); }
 
     SECTION("Less than 0 (Dont Branch)") {
         test({10, (uint32_t)(-1), false});
